@@ -3,6 +3,7 @@
     <Project Path="src/OrderFlow.Api/OrderFlow.Api.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/OrderFlow.Tests/OrderFlow.Tests.csproj" />
+    <Project Path="tests/OrderFlow.UnitTests/OrderFlow.UnitTests.csproj" />
+    <Project Path="tests/OrderFlow.IntegrationTests/OrderFlow.IntegrationTests.csproj" />
   </Folder>
 </Solution>
