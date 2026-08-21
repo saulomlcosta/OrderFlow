@@ -18,6 +18,10 @@ For local development runs, the API now uses SQLite in-memory so the application
 starts with a clean transient dataset each time `dotnet run` is executed in the
 Development environment.
 
+The repository now also contains a small Angular 18 frontend written in
+TypeScript. It is intentionally a thin laboratory UI that exercises the current
+backend flow rather than a full product experience.
+
 ## Current Capabilities
 
 - Create a product
@@ -28,6 +32,7 @@ Development environment.
 - Complete a checkout into a final order
 - Preserve product name and price in historical order items
 - Get an order
+- Exercise the full flow through a local Angular UI
 
 ## Current Domain Concepts
 
@@ -54,6 +59,9 @@ without introducing extra projects or extra DbContexts.
 The local HTTP workflow now matches the checkout-based purchase flow and can be
 exercised directly from `OrderFlow.Api.http`.
 
+The frontend uses a local dev proxy so `npm start` can call the API directly
+while the backend runs on `http://localhost:5216`.
+
 ## Known Limitations
 
 - No authentication
@@ -64,7 +72,7 @@ exercised directly from `OrderFlow.Api.http`.
 - No observability
 - No containerization
 - No distributed architecture
-- No frontend
+- No authentication-aware frontend flows
 - No broader concurrency strategy beyond protected reservation and stock confirmation flows
 - No automatic reservation expiration
 - Stock reservation protects quantity only, not price
@@ -73,5 +81,6 @@ exercised directly from `OrderFlow.Api.http`.
 
 ## Next Step
 
-Use `EXP-003` to clarify the next domain rules around reservation lifetime,
-release, and future payment integration.
+Use the new UI as a learning surface while clarifying the next domain rules
+around reservation lifetime, release, manual administration, and future payment
+integration.

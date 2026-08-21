@@ -1,0 +1,17 @@
+{
+  "/products": {
+    "target": "http://localhost:5216",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/checkouts": {
+    "target": "http://localhost:5216",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/orders": {
+    "target": "http://localhost:5216",
+    "secure": false,
+    "changeOrigin": true
+  }
+}

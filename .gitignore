@@ -20,6 +20,9 @@ TestResults/
 # Package artifacts
 packages/
 *.nupkg
+node_modules/
+.npm-cache/
+dist/
 
 # Logs
 *.log

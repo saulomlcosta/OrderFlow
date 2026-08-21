@@ -1,0 +1,270 @@
+<main class="shell">
+  <section class="hero panel">
+    <div class="hero-copy">
+      <p class="eyebrow">OrderFlow Laboratory</p>
+      <h1>{{ title }}</h1>
+      <p class="hero-text">{{ subtitle }}</p>
+    </div>
+
+    <div class="hero-status">
+      <p class="status-label">Current focus</p>
+      <p class="status-copy">{{ banner() }}</p>
+
+      @if (busyAction()) {
+        <p class="status-busy">{{ busyAction() }}...</p>
+      }
+    </div>
+  </section>
+
+  @if (errorMessage()) {
+    <section class="feedback feedback-error">
+      <strong>Request could not be completed.</strong>
+      <span>{{ errorMessage() }}</span>
+    </section>
+  }
+
+  <section class="guide-grid">
+    <article class="panel">
+      <div class="panel-heading">
+        <p class="step">Step 1</p>
+        <h2>Create a product</h2>
+      </div>
+
+      <label>
+        <span>Name</span>
+        <input
+          [ngModel]="createProductName()"
+          (ngModelChange)="createProductName.set($event); clearMessage()"
+          placeholder="Mechanical Keyboard"
+        />
+      </label>
+
+      <label>
+        <span>Price</span>
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          [ngModel]="createProductPrice()"
+          (ngModelChange)="createProductPrice.set($event); clearMessage()"
+        />
+      </label>
+
+      <button type="button" (click)="createProduct()" [disabled]="!!busyAction()">Create product</button>
+    </article>
+
+    <article class="panel">
+      <div class="panel-heading">
+        <p class="step">Step 2</p>
+        <h2>Find or reuse a product</h2>
+      </div>
+
+      <label>
+        <span>Product id</span>
+        <input
+          [ngModel]="productIdInput()"
+          (ngModelChange)="productIdInput.set($event); clearMessage()"
+          placeholder="Paste an existing product id"
+        />
+      </label>
+
+      <div class="actions-row">
+        <button type="button" class="button-secondary" (click)="loadProduct()" [disabled]="!!busyAction()">
+          Load product
+        </button>
+      </div>
+    </article>
+  </section>
+
+  <section class="workspace-grid">
+    <article class="panel product-panel">
+      <div class="panel-heading">
+        <p class="step">Inventory View</p>
+        <h2>Product state</h2>
+      </div>
+
+      @if (currentProduct(); as product) {
+        <div class="product-header">
+          <div>
+            <p class="product-name">{{ product.name }}</p>
+            <p class="product-id">{{ product.id }}</p>
+          </div>
+
+          <div class="pill" [attr.data-tone]="productHealthTone()">
+            {{ productHealthTone() === 'danger' ? 'No availability' : productHealthTone() === 'warning' ? 'Reservation in progress' : 'Healthy stock' }}
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span>Total</span>
+            <strong>{{ product.stockQuantity }}</strong>
+          </div>
+          <div class="stat-card">
+            <span>Reserved</span>
+            <strong>{{ product.reservedStockQuantity }}</strong>
+          </div>
+          <div class="stat-card">
+            <span>Available</span>
+            <strong>{{ product.availableStockQuantity }}</strong>
+          </div>
+          <div class="stat-card">
+            <span>Unit price</span>
+            <strong>{{ product.price | currency:'USD':'symbol':'1.2-2' }}</strong>
+          </div>
+        </div>
+
+        <div class="form-block">
+          <label>
+            <span>Add stock</span>
+            <input
+              type="number"
+              min="1"
+              [ngModel]="stockQuantity()"
+              (ngModelChange)="stockQuantity.set($event); clearMessage()"
+            />
+          </label>
+
+          <button type="button" (click)="addStock()" [disabled]="!!busyAction()">Add stock</button>
+        </div>
+      } @else {
+        <p class="empty-copy">Create or load a product to inspect inventory, reserved quantities, and available stock.</p>
+      }
+    </article>
+
+    <article class="panel checkout-panel">
+      <div class="panel-heading">
+        <p class="step">Checkout flow</p>
+        <h2>Reserve before selling</h2>
+      </div>
+
+      <label>
+        <span>Checkout quantity</span>
+        <input
+          type="number"
+          min="1"
+          [ngModel]="checkoutQuantity()"
+          (ngModelChange)="checkoutQuantity.set($event); clearMessage()"
+        />
+      </label>
+
+      <button type="button" (click)="startCheckout()" [disabled]="!!busyAction()">Start checkout</button>
+
+      @if (currentCheckout(); as checkout) {
+        <div class="checkout-card">
+          <div class="checkout-topline">
+            <strong>{{ checkout.status }}</strong>
+            <span>Expires {{ checkout.expiresAt | date:'short' }}</span>
+          </div>
+
+          <p class="checkout-id">{{ checkout.id }}</p>
+
+          <div class="checkout-items">
+            @for (item of checkout.items; track trackByProductId($index, item)) {
+              <div class="checkout-item">
+                <span>{{ item.productId }}</span>
+                <strong>{{ item.quantity }} unit{{ item.quantity === 1 ? '' : 's' }}</strong>
+              </div>
+            }
+          </div>
+
+          <div class="actions-row">
+            <button
+              type="button"
+              class="button-secondary"
+              (click)="cancelCheckout()"
+              [disabled]="!!busyAction() || checkout.status !== 'Active'">
+              Cancel checkout
+            </button>
+
+            <button
+              type="button"
+              (click)="completeCheckout()"
+              [disabled]="!!busyAction() || checkout.status !== 'Active'">
+              Complete checkout
+            </button>
+          </div>
+        </div>
+      } @else {
+        <p class="empty-copy">Start a checkout to reserve stock first and complete the sale only after confirmation.</p>
+      }
+    </article>
+
+    <article class="panel order-panel">
+      <div class="panel-heading">
+        <p class="step">Order snapshot</p>
+        <h2>Commercial data preserved</h2>
+      </div>
+
+      <label>
+        <span>Order id</span>
+        <input
+          [ngModel]="orderIdInput()"
+          (ngModelChange)="orderIdInput.set($event); clearMessage()"
+          placeholder="Load an order after completion"
+        />
+      </label>
+
+      <button type="button" class="button-secondary" (click)="loadOrder()" [disabled]="!!busyAction()">
+        Load order
+      </button>
+
+      @if (currentOrder(); as order) {
+        <div class="order-summary">
+          <div class="summary-row">
+            <span>Created</span>
+            <strong>{{ order.createdAt | date:'medium' }}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Total</span>
+            <strong>{{ order.total | currency:'USD':'symbol':'1.2-2' }}</strong>
+          </div>
+        </div>
+
+        <div class="order-items">
+          @for (item of order.items; track trackByProductId($index, item)) {
+            <div class="order-item">
+              <div>
+                <p>{{ item.productName }}</p>
+                <span>{{ item.productId }}</span>
+              </div>
+
+              <div class="order-item-metrics">
+                <strong>{{ item.quantity }}x</strong>
+                <span>{{ item.unitPrice | currency:'USD':'symbol':'1.2-2' }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="empty-copy">When a checkout is completed, the resulting order can be loaded here to inspect the preserved commercial snapshot.</p>
+      }
+    </article>
+  </section>
+
+  <section class="panel learn-panel">
+    <div class="panel-heading">
+      <p class="step">Why this UI exists</p>
+      <h2>What to observe while testing</h2>
+    </div>
+
+    <div class="learn-grid">
+      <div>
+        <strong>Create and stock</strong>
+        <p>Notice that stock starts at zero, then grows independently from reservations.</p>
+      </div>
+      <div>
+        <strong>Reserve first</strong>
+        <p>Starting checkout reduces available stock without creating an order yet.</p>
+      </div>
+      <div>
+        <strong>Cancel safely</strong>
+        <p>Cancellation releases reserved quantities and makes them available again.</p>
+      </div>
+      <div>
+        <strong>Complete atomically</strong>
+        <p>Completion confirms stock deduction and creates the order snapshot in one business step.</p>
+      </div>
+    </div>
+  </section>
+</main>
