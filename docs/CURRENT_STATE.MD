@@ -56,7 +56,7 @@ without introducing extra projects or extra DbContexts.
 - No containerization
 - No distributed architecture
 - No frontend
-- No concurrency strategy
+- No broader concurrency strategy beyond protected stock decrement during order creation
 - No stock reservation
 - No payment processing
 - No checkout workflow
@@ -64,5 +64,5 @@ without introducing extra projects or extra DbContexts.
 
 ## Next Step
 
-Run `EXP-001` to learn whether the current order flow remains correct when
-multiple customers try to buy the same stock concurrently.
+Use the concurrency baseline from `EXP-001` to compare alternative protection
+strategies and learn when a broader concurrency approach becomes necessary.

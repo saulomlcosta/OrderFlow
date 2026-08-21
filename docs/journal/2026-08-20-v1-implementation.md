@@ -73,3 +73,10 @@ helps separate:
 - reproducing the problem
 - understanding the problem
 - fixing the problem
+
+After reproducing the issue, the first correction chosen was:
+
+- atomic stock update
+- transaction covering stock decrement and order creation
+
+This was intentionally smaller than introducing a broad concurrency abstraction.

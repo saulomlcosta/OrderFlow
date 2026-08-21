@@ -70,6 +70,29 @@ internal static class CreateOrderEndpoint
 
         try
         {
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+            foreach (var item in requestedItems)
+            {
+                var affectedRows = await dbContext.Inventories
+                    .Where(x => x.ProductId == item.ProductId && x.Quantity >= item.Quantity)
+                    .ExecuteUpdateAsync(
+                        setters => setters.SetProperty(
+                            inventory => inventory.Quantity,
+                            inventory => inventory.Quantity - item.Quantity),
+                        cancellationToken);
+
+                if (affectedRows == 0)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+
+                    return Results.ValidationProblem(new Dictionary<string, string[]>
+                    {
+                        ["stock"] = [$"Not enough stock for product {item.ProductId}."]
+                    });
+                }
+            }
+
             var orderItems = requestedItems
                 .Select(item =>
                 {
@@ -78,15 +101,11 @@ internal static class CreateOrderEndpoint
                 })
                 .ToList();
 
-            foreach (var item in requestedItems)
-            {
-                inventories[item.ProductId].Remove(item.Quantity);
-            }
-
             var order = Order.Create(orderItems);
 
             dbContext.Orders.Add(order);
             await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
 
             return Results.Created($"/orders/{order.Id}", new { order.Id });
         }

@@ -82,11 +82,7 @@ possible solutions.
 
 ## Possible next solutions to compare later
 
-Do not implement these yet just because they exist.
-
-- explicit transaction handling
 - optimistic concurrency
-- atomic database update
 - database locking strategies
 - redesign of the order creation flow
 
@@ -119,4 +115,27 @@ New question:
 
 Candidate next step:
 
-- compare a simple transactional/concurrency protection strategy with the current implementation
+- implement a smaller correction and rerun the same experiment
+
+## Follow-up after the first fix
+
+Implemented:
+
+- atomic stock update
+- transaction covering stock decrement and order creation
+
+Follow-up result:
+
+- with stock quantity `1`
+- two concurrent order requests for quantity `1`
+- one request returned success
+- one request returned failure
+- one order was created
+- final stock quantity was `0`
+
+What this teaches:
+
+- the critical guarantee became stronger when it moved closer to the real data update
+- the transaction and the atomic stock update solve different concerns
+- the atomic update decides whether stock can still be decremented
+- the transaction ensures stock decrement and order creation succeed or fail together

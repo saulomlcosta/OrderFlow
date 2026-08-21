@@ -104,7 +104,7 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
     }
 
     [Fact]
-    public async Task CreateOrder_WithConcurrentBuyers_CanCreateTwoOrdersAgainstOneUnit()
+    public async Task CreateOrder_WithConcurrentBuyers_AllowsOnlyOneOrderAgainstOneUnit()
     {
         var productId = await CreateProductAsync("Limited Console", 3000m);
         await AddStockAsync(productId, 1);
@@ -145,11 +145,13 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
             var responses = await Task.WhenAll(firstOrderTask, secondOrderTask);
 
             var successfulOrders = responses.Count(response => response.StatusCode == HttpStatusCode.Created);
+            var failedOrders = responses.Count(response => response.StatusCode == HttpStatusCode.BadRequest);
             var ordersAfter = await CountOrdersAsync();
             var product = await GetProductAsync(productId);
 
-            Assert.Equal(2, successfulOrders);
-            Assert.Equal(ordersBefore + 2, ordersAfter);
+            Assert.Equal(1, successfulOrders);
+            Assert.Equal(1, failedOrders);
+            Assert.Equal(ordersBefore + 1, ordersAfter);
             Assert.NotNull(product);
             Assert.Equal(0, product.StockQuantity);
         }
