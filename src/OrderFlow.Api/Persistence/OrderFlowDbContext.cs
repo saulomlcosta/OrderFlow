@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using OrderFlow.Api.Checkouts;
+using OrderFlow.Api.Checkouts.Data;
 using OrderFlow.Api.Inventory;
 using OrderFlow.Api.Inventory.Data;
 using OrderFlow.Api.Orders;
@@ -15,12 +17,15 @@ internal sealed class OrderFlowDbContext(DbContextOptions<OrderFlowDbContext> op
 
     internal DbSet<Inventory.Inventory> Inventories => Set<Inventory.Inventory>();
 
+    internal DbSet<Checkout> Checkouts => Set<Checkout>();
+
     internal DbSet<Order> Orders => Set<Order>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new ProductEntityConfiguration());
         modelBuilder.ApplyConfiguration(new InventoryEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new CheckoutEntityConfiguration());
         modelBuilder.ApplyConfiguration(new OrderEntityConfiguration());
     }
 }

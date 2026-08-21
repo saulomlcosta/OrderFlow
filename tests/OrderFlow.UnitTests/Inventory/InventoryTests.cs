@@ -50,4 +50,43 @@ public class InventoryTests
         Assert.Equal("Cannot remove more stock than is available.", exception.Message);
         Assert.Equal(2, inventory.Quantity);
     }
+
+    [Fact]
+    public void Reserve_WithValidQuantity_IncreasesReservedStock()
+    {
+        var inventory = OrderFlow.Api.Inventory.Inventory.ForProduct(Guid.NewGuid());
+        inventory.Add(5);
+
+        inventory.Reserve(2);
+
+        Assert.Equal(2, inventory.ReservedQuantity);
+        Assert.Equal(3, inventory.AvailableQuantity);
+    }
+
+    [Fact]
+    public void Release_WithValidQuantity_DecreasesReservedStock()
+    {
+        var inventory = OrderFlow.Api.Inventory.Inventory.ForProduct(Guid.NewGuid());
+        inventory.Add(5);
+        inventory.Reserve(3);
+
+        inventory.Release(2);
+
+        Assert.Equal(1, inventory.ReservedQuantity);
+        Assert.Equal(4, inventory.AvailableQuantity);
+    }
+
+    [Fact]
+    public void ConfirmReservedRemoval_WithValidQuantity_DecreasesQuantityAndReservedStock()
+    {
+        var inventory = OrderFlow.Api.Inventory.Inventory.ForProduct(Guid.NewGuid());
+        inventory.Add(5);
+        inventory.Reserve(2);
+
+        inventory.ConfirmReservedRemoval(2);
+
+        Assert.Equal(3, inventory.Quantity);
+        Assert.Equal(0, inventory.ReservedQuantity);
+        Assert.Equal(3, inventory.AvailableQuantity);
+    }
 }

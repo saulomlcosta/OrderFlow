@@ -19,6 +19,9 @@ close to their modules so logical boundaries remain visible inside the monolith.
 - Create a product
 - Add stock to a product
 - Get a product with its current stock quantity
+- Start a checkout and reserve quantity
+- Cancel a checkout and release reserved quantity
+- Complete a checkout into a final order
 - Create an order
 - Validate stock before finalizing an order
 - Decrease stock when an order is created
@@ -29,6 +32,8 @@ close to their modules so logical boundaries remain visible inside the monolith.
 
 - Product
 - Inventory
+- Checkout
+- CheckoutItem
 - Order
 - OrderItem
 
@@ -37,7 +42,7 @@ close to their modules so logical boundaries remain visible inside the monolith.
 Understand the basic order creation flow, persistence, and domain behavior
 before introducing new abstractions or distributed concerns.
 
-The active next investigation is `EXP-002 - Partial Failure During Order Creation`.
+The active next investigation is `EXP-003 - Stock Reservation Planning`.
 
 ## Recent Adjustment
 
@@ -57,12 +62,12 @@ without introducing extra projects or extra DbContexts.
 - No distributed architecture
 - No frontend
 - No broader concurrency strategy beyond protected stock decrement during order creation
-- No stock reservation
+- No automatic reservation expiration
+- Stock reservation protects quantity only, not price
 - No payment processing
-- No checkout workflow
 - No cart
 
 ## Next Step
 
-Run `EXP-002` to verify whether the current transaction really protects the full
-order creation flow when a failure happens in the middle.
+Use `EXP-003` to clarify the next domain rules around reservation lifetime,
+release, and future payment integration.

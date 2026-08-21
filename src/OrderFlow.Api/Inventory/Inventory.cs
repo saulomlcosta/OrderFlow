@@ -8,6 +8,10 @@ internal sealed class Inventory
 
     internal int Quantity { get; private set; }
 
+    internal int ReservedQuantity { get; private set; }
+
+    internal int AvailableQuantity => Quantity - ReservedQuantity;
+
     private Inventory()
     {
     }
@@ -17,7 +21,8 @@ internal sealed class Inventory
         return new Inventory
         {
             ProductId = productId,
-            Quantity = 0
+            Quantity = 0,
+            ReservedQuantity = 0
         };
     }
 
@@ -38,11 +43,62 @@ internal sealed class Inventory
             throw new DomainValidationException("Stock quantity to remove must be greater than zero.");
         }
 
-        if (quantity > Quantity)
+        if (quantity > AvailableQuantity)
         {
             throw new DomainValidationException("Cannot remove more stock than is available.");
         }
 
+        Quantity -= quantity;
+    }
+
+    internal void Reserve(int quantity)
+    {
+        if (quantity <= 0)
+        {
+            throw new DomainValidationException("Stock quantity to reserve must be greater than zero.");
+        }
+
+        if (quantity > AvailableQuantity)
+        {
+            throw new DomainValidationException("Cannot reserve more stock than is available.");
+        }
+
+        ReservedQuantity += quantity;
+    }
+
+    internal void Release(int quantity)
+    {
+        if (quantity <= 0)
+        {
+            throw new DomainValidationException("Stock quantity to release must be greater than zero.");
+        }
+
+        if (quantity > ReservedQuantity)
+        {
+            throw new DomainValidationException("Cannot release more stock than is reserved.");
+        }
+
+        ReservedQuantity -= quantity;
+    }
+
+    internal void ConfirmReservedRemoval(int quantity)
+    {
+        if (quantity <= 0)
+        {
+            throw new DomainValidationException("Stock quantity to confirm must be greater than zero.");
+        }
+
+        if (quantity > ReservedQuantity)
+        {
+            throw new DomainValidationException("Cannot confirm more reserved stock than is reserved.");
+        }
+
+        if (quantity > Quantity)
+        {
+            throw new DomainValidationException("Cannot confirm more stock than exists.");
+        }
+
+        ReservedQuantity -= quantity;
         Quantity -= quantity;
     }
 }

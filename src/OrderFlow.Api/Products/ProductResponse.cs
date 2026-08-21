@@ -4,4 +4,6 @@ internal sealed record ProductResponse(
     Guid Id,
     string Name,
     decimal Price,
-    int StockQuantity);
+    int StockQuantity,
+    int ReservedStockQuantity,
+    int AvailableStockQuantity);

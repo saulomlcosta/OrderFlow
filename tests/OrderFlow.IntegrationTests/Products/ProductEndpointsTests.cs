@@ -27,6 +27,8 @@ public class ProductEndpointsTests(OrderFlowApiFactory factory)
         Assert.Equal("Laptop", product.Name);
         Assert.Equal(3500m, product.Price);
         Assert.Equal(0, product.StockQuantity);
+        Assert.Equal(0, product.ReservedStockQuantity);
+        Assert.Equal(0, product.AvailableStockQuantity);
     }
 
     [Fact]
@@ -50,6 +52,8 @@ public class ProductEndpointsTests(OrderFlowApiFactory factory)
         Assert.NotNull(product);
         Assert.Equal(productId, product.Id);
         Assert.Equal(7, product.StockQuantity);
+        Assert.Equal(0, product.ReservedStockQuantity);
+        Assert.Equal(7, product.AvailableStockQuantity);
     }
 
     private async Task<Guid> CreateProductAsync(string name, decimal price)

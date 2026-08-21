@@ -45,3 +45,16 @@ the production code focused on the actual behavior of the system.
 
 After validating the rollback behavior, the temporary hook and the test that
 depended on it were removed from the main codebase.
+
+## Reservation follow-up
+
+Later on Friday, August 21, 2026, the project took its first step into stock
+reservation by introducing a `Start Checkout` flow.
+
+The initial rule is intentionally narrow:
+
+- reservation protects quantity only
+- price is still resolved when the final order is created
+
+This keeps the first implementation smaller and lets availability concerns
+evolve before commercial guarantees are introduced.

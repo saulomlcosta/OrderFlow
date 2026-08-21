@@ -34,6 +34,14 @@ internal static class CreateProductEndpoint
                     dbContext.Inventories
                         .Where(i => i.ProductId == x.Id)
                         .Select(i => i.Quantity)
+                        .Single(),
+                    dbContext.Inventories
+                        .Where(i => i.ProductId == x.Id)
+                        .Select(i => i.ReservedQuantity)
+                        .Single(),
+                    dbContext.Inventories
+                        .Where(i => i.ProductId == x.Id)
+                        .Select(i => i.Quantity - i.ReservedQuantity)
                         .Single()))
                 .SingleAsync(cancellationToken);
 

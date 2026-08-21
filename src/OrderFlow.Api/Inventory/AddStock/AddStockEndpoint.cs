@@ -32,7 +32,13 @@ internal static class AddStockEndpoint
             inventory.Add(request.Quantity);
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            return Results.Ok(new ProductResponse(product.Id, product.Name, product.Price, inventory.Quantity));
+            return Results.Ok(new ProductResponse(
+                product.Id,
+                product.Name,
+                product.Price,
+                inventory.Quantity,
+                inventory.ReservedQuantity,
+                inventory.AvailableQuantity));
         }
         catch (DomainValidationException exception)
         {

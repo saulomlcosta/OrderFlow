@@ -9,5 +9,6 @@ internal sealed class InventoryEntityConfiguration : IEntityTypeConfiguration<In
     {
         builder.HasKey(x => x.ProductId);
         builder.Property(x => x.Quantity);
+        builder.Property(x => x.ReservedQuantity);
     }
 }

@@ -1,18 +1,19 @@
 using Microsoft.EntityFrameworkCore;
+using OrderFlow.Api.Checkouts;
 using OrderFlow.Api.Common;
 using OrderFlow.Api.Persistence;
 
-namespace OrderFlow.Api.Orders.CreateOrder;
+namespace OrderFlow.Api.Checkouts.StartCheckout;
 
-internal static class CreateOrderEndpoint
+internal static class StartCheckoutEndpoint
 {
-    internal static void MapCreateOrder(this IEndpointRouteBuilder app)
+    internal static void MapStartCheckout(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/orders", HandleAsync);
+        app.MapPost("/checkouts", HandleAsync);
     }
 
     private static async Task<IResult> HandleAsync(
-        CreateOrderRequest request,
+        StartCheckoutRequest request,
         OrderFlowDbContext dbContext,
         CancellationToken cancellationToken)
     {
@@ -25,14 +26,15 @@ internal static class CreateOrderEndpoint
 
         var requestedItems = request.Items
             .GroupBy(x => x.ProductId)
-            .Select(group => new CreateOrderItemRequest(group.Key, group.Sum(x => x.Quantity)))
+            .Select(group => new StartCheckoutItemRequest(group.Key, group.Sum(x => x.Quantity)))
             .ToList();
 
         var productIds = requestedItems.Select(x => x.ProductId).ToList();
 
         var products = await dbContext.Products
             .Where(x => productIds.Contains(x.Id))
-            .ToDictionaryAsync(x => x.Id, cancellationToken);
+            .Select(x => x.Id)
+            .ToListAsync(cancellationToken);
 
         if (products.Count != productIds.Count)
         {
@@ -40,29 +42,6 @@ internal static class CreateOrderEndpoint
             {
                 ["items"] = ["One or more referenced products do not exist."]
             });
-        }
-
-        var inventories = await dbContext.Inventories
-            .Where(x => productIds.Contains(x.ProductId))
-            .ToDictionaryAsync(x => x.ProductId, cancellationToken);
-
-        foreach (var item in requestedItems)
-        {
-            if (!inventories.TryGetValue(item.ProductId, out var inventory))
-            {
-                return Results.ValidationProblem(new Dictionary<string, string[]>
-                {
-                    ["items"] = [$"Inventory was not found for product {item.ProductId}."]
-                });
-            }
-
-            if (inventory.AvailableQuantity < item.Quantity)
-            {
-                return Results.ValidationProblem(new Dictionary<string, string[]>
-                {
-                    ["stock"] = [$"Not enough available stock for product {item.ProductId}."]
-                });
-            }
         }
 
         try
@@ -75,8 +54,8 @@ internal static class CreateOrderEndpoint
                     .Where(x => x.ProductId == item.ProductId && x.Quantity - x.ReservedQuantity >= item.Quantity)
                     .ExecuteUpdateAsync(
                         setters => setters.SetProperty(
-                            inventory => inventory.Quantity,
-                            inventory => inventory.Quantity - item.Quantity),
+                            inventory => inventory.ReservedQuantity,
+                            inventory => inventory.ReservedQuantity + item.Quantity),
                         cancellationToken);
 
                 if (affectedRows == 0)
@@ -90,44 +69,40 @@ internal static class CreateOrderEndpoint
                 }
             }
 
-            var orderItems = requestedItems
-                .Select(item =>
-                {
-                    var product = products[item.ProductId];
-                    return OrderItem.Create(product.Id, product.Name, product.Price, item.Quantity);
-                })
-                .ToList();
+            var checkout = Checkout.Start(
+                requestedItems.Select(item => CheckoutItem.Create(item.ProductId, item.Quantity)));
 
-            var order = Order.Create(orderItems);
-
-            dbContext.Orders.Add(order);
+            dbContext.Checkouts.Add(checkout);
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
 
-            return Results.Created($"/orders/{order.Id}", new { order.Id });
+            return Results.Created(
+                $"/checkouts/{checkout.Id}",
+                new CheckoutResponse(
+                    checkout.Id,
+                    checkout.CreatedAt,
+                    checkout.ExpiresAt,
+                    checkout.Status.ToString(),
+                    checkout.Items
+                        .Select(item => new CheckoutItemResponse(item.ProductId, item.Quantity))
+                        .ToList()));
         }
         catch (DomainValidationException exception)
         {
             return Results.ValidationProblem(new Dictionary<string, string[]>
             {
-                ["order"] = [exception.Message]
+                ["checkout"] = [exception.Message]
             });
-        }
-        catch (Exception)
-        {
-            return Results.Problem(
-                detail: "Order creation failed before completion.",
-                statusCode: StatusCodes.Status500InternalServerError);
         }
     }
 
-    private static Dictionary<string, string[]> ValidateRequest(CreateOrderRequest request)
+    private static Dictionary<string, string[]> ValidateRequest(StartCheckoutRequest request)
     {
         var errors = new Dictionary<string, string[]>();
 
         if (request.Items is null || request.Items.Count == 0)
         {
-            errors["items"] = ["At least one order item is required."];
+            errors["items"] = ["At least one checkout item is required."];
             return errors;
         }
 
@@ -137,7 +112,7 @@ internal static class CreateOrderEndpoint
 
         if (invalidItems.Count > 0)
         {
-            errors["items"] = ["Each order item must include a valid product id and quantity greater than zero."];
+            errors["items"] = ["Each checkout item must include a valid product id and quantity greater than zero."];
         }
 
         return errors;
