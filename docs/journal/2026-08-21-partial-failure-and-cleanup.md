@@ -42,3 +42,6 @@ business flow long term.
 
 The repository should preserve the learning in commits and docs, while keeping
 the production code focused on the actual behavior of the system.
+
+After validating the rollback behavior, the temporary hook and the test that
+depended on it were removed from the main codebase.

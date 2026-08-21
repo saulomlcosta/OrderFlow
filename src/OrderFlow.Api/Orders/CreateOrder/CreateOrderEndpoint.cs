@@ -14,7 +14,6 @@ internal static class CreateOrderEndpoint
     private static async Task<IResult> HandleAsync(
         CreateOrderRequest request,
         OrderFlowDbContext dbContext,
-        IOrderCreationFailureInjectionHook failureInjectionHook,
         CancellationToken cancellationToken)
     {
         var validationErrors = ValidateRequest(request);
@@ -90,8 +89,6 @@ internal static class CreateOrderEndpoint
                     });
                 }
             }
-
-            await failureInjectionHook.AfterStockDecrementAsync(cancellationToken);
 
             var orderItems = requestedItems
                 .Select(item =>

@@ -152,44 +152,6 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
         Assert.Equal(0, product.StockQuantity);
     }
 
-    [Fact]
-    public async Task CreateOrder_WhenFailureHappensAfterStockDecrement_RollsBackStockAndOrder()
-    {
-        var productId = await CreateProductAsync("Rollback Chair", 250m);
-        await AddStockAsync(productId, 3);
-
-        var ordersBefore = await CountOrdersAsync();
-        _factory.FailureInjectionHook.Enable();
-
-        try
-        {
-            var response = await _client.PostAsJsonAsync("/orders", new
-            {
-                Items = new[]
-                {
-                    new
-                    {
-                        ProductId = productId,
-                        Quantity = 1
-                    }
-                }
-            });
-
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-
-            var ordersAfter = await CountOrdersAsync();
-            var product = await GetProductAsync(productId);
-
-            Assert.Equal(ordersBefore, ordersAfter);
-            Assert.NotNull(product);
-            Assert.Equal(3, product.StockQuantity);
-        }
-        finally
-        {
-            _factory.FailureInjectionHook.Disable();
-        }
-    }
-
     private async Task<Guid> CreateProductAsync(string name, decimal price)
     {
         var response = await _client.PostAsJsonAsync("/products", new
