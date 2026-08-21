@@ -14,6 +14,7 @@ internal static class CreateOrderEndpoint
     private static async Task<IResult> HandleAsync(
         CreateOrderRequest request,
         OrderFlowDbContext dbContext,
+        IOrderCreationFailureInjectionHook failureInjectionHook,
         CancellationToken cancellationToken)
     {
         var validationErrors = ValidateRequest(request);
@@ -90,6 +91,8 @@ internal static class CreateOrderEndpoint
                 }
             }
 
+            await failureInjectionHook.AfterStockDecrementAsync(cancellationToken);
+
             var orderItems = requestedItems
                 .Select(item =>
                 {
@@ -112,6 +115,12 @@ internal static class CreateOrderEndpoint
             {
                 ["order"] = [exception.Message]
             });
+        }
+        catch (Exception)
+        {
+            return Results.Problem(
+                detail: "Order creation failed before completion.",
+                statusCode: StatusCodes.Status500InternalServerError);
         }
     }
 

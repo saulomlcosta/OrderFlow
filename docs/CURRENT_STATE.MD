@@ -37,7 +37,7 @@ close to their modules so logical boundaries remain visible inside the monolith.
 Understand the basic order creation flow, persistence, and domain behavior
 before introducing new abstractions or distributed concerns.
 
-The active next investigation is `EXP-001 - Concurrent Orders Against the Same Stock`.
+The active next investigation is `EXP-002 - Partial Failure During Order Creation`.
 
 ## Recent Adjustment
 
@@ -64,5 +64,5 @@ without introducing extra projects or extra DbContexts.
 
 ## Next Step
 
-Use the concurrency baseline from `EXP-001` to compare alternative protection
-strategies and learn when a broader concurrency approach becomes necessary.
+Run `EXP-002` to verify whether the current transaction really protects the full
+order creation flow when a failure happens in the middle.
