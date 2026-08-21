@@ -1,6 +1,76 @@
 @OrderFlow.Api_HostAddress = http://localhost:5216
 
-GET {{OrderFlow.Api_HostAddress}}/weatherforecast/
+###
+# @name createProduct
+POST {{OrderFlow.Api_HostAddress}}/products
+Content-Type: application/json
+
+{
+  "name": "Mechanical Keyboard",
+  "price": 500
+}
+
+###
+# @name addStock
+POST {{OrderFlow.Api_HostAddress}}/products/{{createProduct.response.body.$.id}}/stock
+Content-Type: application/json
+
+{
+  "quantity": 10
+}
+
+###
+# @name getProduct
+GET {{OrderFlow.Api_HostAddress}}/products/{{createProduct.response.body.$.id}}
 Accept: application/json
 
 ###
+# @name startCheckout
+POST {{OrderFlow.Api_HostAddress}}/checkouts
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "productId": "{{createProduct.response.body.$.id}}",
+      "quantity": 2
+    }
+  ]
+}
+
+###
+# @name getProductAfterReservation
+GET {{OrderFlow.Api_HostAddress}}/products/{{createProduct.response.body.$.id}}
+Accept: application/json
+
+###
+# @name cancelCheckout
+POST {{OrderFlow.Api_HostAddress}}/checkouts/{{startCheckout.response.body.$.id}}/cancel
+
+###
+# @name startAnotherCheckout
+POST {{OrderFlow.Api_HostAddress}}/checkouts
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "productId": "{{createProduct.response.body.$.id}}",
+      "quantity": 2
+    }
+  ]
+}
+
+###
+# @name completeCheckout
+POST {{OrderFlow.Api_HostAddress}}/checkouts/{{startAnotherCheckout.response.body.$.id}}/complete
+
+###
+# @name getProductAfterCompletion
+GET {{OrderFlow.Api_HostAddress}}/products/{{createProduct.response.body.$.id}}
+Accept: application/json
+
+###
+# @name getOrder
+GET {{OrderFlow.Api_HostAddress}}/orders/{{completeCheckout.response.body.$.id}}
+Accept: application/json

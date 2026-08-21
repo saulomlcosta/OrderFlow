@@ -62,3 +62,18 @@ evolve before commercial guarantees are introduced.
 After that, the direct `Create Order` purchase entrypoint was removed so the
 main purchase behavior would be centered on checkout instead of keeping two
 different ways to buy the same product.
+
+## Local developer flow
+
+To make manual exploration easier, the Development environment now runs with
+SQLite in-memory and the `.http` file was updated to follow the real product
+flow:
+
+- create product
+- add stock
+- start checkout
+- cancel or complete checkout
+- inspect final order
+
+This keeps local testing lightweight while still letting the product be used
+manually before a frontend exists.

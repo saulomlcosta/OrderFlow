@@ -14,6 +14,10 @@ Single ASP.NET Core Minimal API application with one .NET project for the main a
 Persistence still uses one shared EF Core DbContext, but entity mappings now live
 close to their modules so logical boundaries remain visible inside the monolith.
 
+For local development runs, the API now uses SQLite in-memory so the application
+starts with a clean transient dataset each time `dotnet run` is executed in the
+Development environment.
+
 ## Current Capabilities
 
 - Create a product
@@ -46,6 +50,9 @@ The active next investigation is `EXP-003 - Stock Reservation Planning`.
 Kept one DbContext for transactional simplicity, but moved EF Core mapping details
 closer to Products, Inventory, and Orders to better reflect module boundaries
 without introducing extra projects or extra DbContexts.
+
+The local HTTP workflow now matches the checkout-based purchase flow and can be
+exercised directly from `OrderFlow.Api.http`.
 
 ## Known Limitations
 
