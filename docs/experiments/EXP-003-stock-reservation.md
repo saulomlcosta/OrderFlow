@@ -48,6 +48,7 @@ Today the project now has a first reservation-oriented flow:
 - `Start Checkout` reserves quantity
 - `Cancel Checkout` releases quantity
 - `Complete Checkout` converts reservation into a final order
+- direct order creation is no longer the main purchase entrypoint
 
 ## Questions to answer
 

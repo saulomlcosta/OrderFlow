@@ -22,9 +22,6 @@ close to their modules so logical boundaries remain visible inside the monolith.
 - Start a checkout and reserve quantity
 - Cancel a checkout and release reserved quantity
 - Complete a checkout into a final order
-- Create an order
-- Validate stock before finalizing an order
-- Decrease stock when an order is created
 - Preserve product name and price in historical order items
 - Get an order
 
@@ -61,7 +58,7 @@ without introducing extra projects or extra DbContexts.
 - No containerization
 - No distributed architecture
 - No frontend
-- No broader concurrency strategy beyond protected stock decrement during order creation
+- No broader concurrency strategy beyond protected reservation and stock confirmation flows
 - No automatic reservation expiration
 - Stock reservation protects quantity only, not price
 - No payment processing

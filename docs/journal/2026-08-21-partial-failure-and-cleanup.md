@@ -58,3 +58,7 @@ The initial rule is intentionally narrow:
 
 This keeps the first implementation smaller and lets availability concerns
 evolve before commercial guarantees are introduced.
+
+After that, the direct `Create Order` purchase entrypoint was removed so the
+main purchase behavior would be centered on checkout instead of keeping two
+different ways to buy the same product.

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
+using OrderFlow.Api.Checkouts;
 using OrderFlow.Api.Orders;
 using OrderFlow.Api.Persistence;
 using OrderFlow.Api.Products;
@@ -16,22 +17,13 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
     private readonly HttpClient _client = factory.CreateClient();
 
     [Fact]
-    public async Task CreateOrder_WithEnoughStock_Succeeds_AndDecreasesInventory()
+    public async Task CompleteCheckout_WithEnoughReservedStock_Succeeds_AndDecreasesInventory()
     {
         var productId = await CreateProductAsync("Camera", 500m);
         await AddStockAsync(productId, 5);
+        var checkoutId = await StartCheckoutAsync(productId, 2);
 
-        var createOrderResponse = await _client.PostAsJsonAsync("/orders", new
-        {
-            Items = new[]
-            {
-                new
-                {
-                    ProductId = productId,
-                    Quantity = 2
-                }
-            }
-        });
+        var createOrderResponse = await _client.PostAsync($"/checkouts/{checkoutId}/complete", content: null);
 
         Assert.Equal(HttpStatusCode.Created, createOrderResponse.StatusCode);
 
@@ -45,12 +37,12 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
     }
 
     [Fact]
-    public async Task CreateOrder_WithoutEnoughStock_Fails()
+    public async Task StartCheckout_WithoutEnoughStock_Fails()
     {
         var productId = await CreateProductAsync("Printer", 900m);
         await AddStockAsync(productId, 1);
 
-        var response = await _client.PostAsJsonAsync("/orders", new
+        var response = await _client.PostAsJsonAsync("/checkouts", new
         {
             Items = new[]
             {
@@ -66,22 +58,13 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
     }
 
     [Fact]
-    public async Task GetCreatedOrder_Succeeds_AndPreservesProductSnapshot()
+    public async Task GetCompletedCheckoutOrder_Succeeds_AndPreservesProductSnapshot()
     {
         var productId = await CreateProductAsync("Monitor", 500m);
         await AddStockAsync(productId, 4);
+        var checkoutId = await StartCheckoutAsync(productId, 1);
 
-        var createOrderResponse = await _client.PostAsJsonAsync("/orders", new
-        {
-            Items = new[]
-            {
-                new
-                {
-                    ProductId = productId,
-                    Quantity = 1
-                }
-            }
-        });
+        var createOrderResponse = await _client.PostAsync($"/checkouts/{checkoutId}/complete", content: null);
 
         createOrderResponse.EnsureSuccessStatusCode();
 
@@ -106,17 +89,15 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
     }
 
     [Fact]
-    public async Task CreateOrder_WithConcurrentBuyers_AllowsOnlyOneOrderAgainstOneUnit()
+    public async Task StartCheckout_WithConcurrentBuyers_AllowsOnlyOneReservationAgainstOneUnit()
     {
         var productId = await CreateProductAsync("Limited Console", 3000m);
         await AddStockAsync(productId, 1);
 
-        var ordersBefore = await CountOrdersAsync();
-
         var firstClient = _factory.CreateClient();
         var secondClient = _factory.CreateClient();
 
-        var firstOrderTask = firstClient.PostAsJsonAsync("/orders", new
+        var firstOrderTask = firstClient.PostAsJsonAsync("/checkouts", new
         {
             Items = new[]
             {
@@ -128,7 +109,7 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
             }
         });
 
-        var secondOrderTask = secondClient.PostAsJsonAsync("/orders", new
+        var secondOrderTask = secondClient.PostAsJsonAsync("/checkouts", new
         {
             Items = new[]
             {
@@ -144,15 +125,13 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
 
         var successfulOrders = responses.Count(response => response.StatusCode == HttpStatusCode.Created);
         var failedOrders = responses.Count(response => response.StatusCode == HttpStatusCode.BadRequest);
-        var ordersAfter = await CountOrdersAsync();
         var product = await GetProductAsync(productId);
 
         Assert.Equal(1, successfulOrders);
         Assert.Equal(1, failedOrders);
-        Assert.Equal(ordersBefore + 1, ordersAfter);
         Assert.NotNull(product);
-        Assert.Equal(0, product.StockQuantity);
-        Assert.Equal(0, product.ReservedStockQuantity);
+        Assert.Equal(1, product.StockQuantity);
+        Assert.Equal(1, product.ReservedStockQuantity);
         Assert.Equal(0, product.AvailableStockQuantity);
     }
 
@@ -180,6 +159,26 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
         response.EnsureSuccessStatusCode();
     }
 
+    private async Task<Guid> StartCheckoutAsync(Guid productId, int quantity)
+    {
+        var response = await _client.PostAsJsonAsync("/checkouts", new
+        {
+            Items = new[]
+            {
+                new
+                {
+                    ProductId = productId,
+                    Quantity = quantity
+                }
+            }
+        });
+
+        response.EnsureSuccessStatusCode();
+
+        var checkout = await response.Content.ReadFromJsonAsync<CheckoutResponse>();
+        return checkout!.Id;
+    }
+
     private async Task<int> CountOrdersAsync()
     {
         await using var scope = _factory.Services.CreateAsyncScope();
@@ -195,6 +194,5 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
 
         return await response.Content.ReadFromJsonAsync<ProductResponse>();
     }
-
     private sealed record CreatedOrderResponse(Guid Id);
 }
