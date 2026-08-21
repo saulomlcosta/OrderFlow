@@ -55,3 +55,21 @@ This feels like a good middle point for V1:
 - When will direct endpoint-to-DbContext code become hard to change or test?
 - When will product reads and order reads need different shapes or optimization?
 - When does database initialization need to move from `EnsureCreated` to migrations?
+
+## Investigation note
+
+To make the first concurrency failure reproducible, we temporarily introduced a
+diagnostic hook in the order creation flow used only by integration tests.
+
+The goal was not to create a production solution.
+
+The goal was to force two requests to cross the stock validation point with the
+same previously observed inventory state so we could prove the overselling
+problem deterministically.
+
+This kind of temporary instrumentation is useful in the laboratory because it
+helps separate:
+
+- reproducing the problem
+- understanding the problem
+- fixing the problem

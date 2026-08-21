@@ -37,6 +37,8 @@ close to their modules so logical boundaries remain visible inside the monolith.
 Understand the basic order creation flow, persistence, and domain behavior
 before introducing new abstractions or distributed concerns.
 
+The active next investigation is `EXP-001 - Concurrent Orders Against the Same Stock`.
+
 ## Recent Adjustment
 
 Kept one DbContext for transactional simplicity, but moved EF Core mapping details
@@ -62,5 +64,5 @@ without introducing extra projects or extra DbContexts.
 
 ## Next Step
 
-Use this baseline to explore concurrency, failure handling, and when
-additional architectural separation becomes justified.
+Run `EXP-001` to learn whether the current order flow remains correct when
+multiple customers try to buy the same stock concurrently.

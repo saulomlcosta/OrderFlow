@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 using OrderFlow.Api.Orders;
 using OrderFlow.Api.Persistence;
 using OrderFlow.Api.Products;
@@ -102,6 +103,62 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
         Assert.Equal(500m, order.Total);
     }
 
+    [Fact]
+    public async Task CreateOrder_WithConcurrentBuyers_CanCreateTwoOrdersAgainstOneUnit()
+    {
+        var productId = await CreateProductAsync("Limited Console", 3000m);
+        await AddStockAsync(productId, 1);
+
+        var ordersBefore = await CountOrdersAsync();
+
+        _factory.DiagnosticHook.Prepare(expectedParticipants: 2);
+
+        try
+        {
+            var firstClient = _factory.CreateClient();
+            var secondClient = _factory.CreateClient();
+
+            var firstOrderTask = firstClient.PostAsJsonAsync("/orders", new
+            {
+                Items = new[]
+                {
+                    new
+                    {
+                        ProductId = productId,
+                        Quantity = 1
+                    }
+                }
+            });
+
+            var secondOrderTask = secondClient.PostAsJsonAsync("/orders", new
+            {
+                Items = new[]
+                {
+                    new
+                    {
+                        ProductId = productId,
+                        Quantity = 1
+                    }
+                }
+            });
+
+            var responses = await Task.WhenAll(firstOrderTask, secondOrderTask);
+
+            var successfulOrders = responses.Count(response => response.StatusCode == HttpStatusCode.Created);
+            var ordersAfter = await CountOrdersAsync();
+            var product = await GetProductAsync(productId);
+
+            Assert.Equal(2, successfulOrders);
+            Assert.Equal(ordersBefore + 2, ordersAfter);
+            Assert.NotNull(product);
+            Assert.Equal(0, product.StockQuantity);
+        }
+        finally
+        {
+            _factory.DiagnosticHook.Disable();
+        }
+    }
+
     private async Task<Guid> CreateProductAsync(string name, decimal price)
     {
         var response = await _client.PostAsJsonAsync("/products", new
@@ -124,6 +181,22 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
         });
 
         response.EnsureSuccessStatusCode();
+    }
+
+    private async Task<int> CountOrdersAsync()
+    {
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<OrderFlowDbContext>();
+
+        return await dbContext.Orders.CountAsync();
+    }
+
+    private async Task<ProductResponse?> GetProductAsync(Guid productId)
+    {
+        var response = await _client.GetAsync($"/products/{productId}");
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<ProductResponse>();
     }
 
     private sealed record CreatedOrderResponse(Guid Id);

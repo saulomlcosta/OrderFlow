@@ -4,6 +4,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using OrderFlow.Api.Orders.CreateOrder;
 using OrderFlow.Api.Persistence;
 
 namespace OrderFlow.IntegrationTests.Infrastructure;
@@ -11,6 +12,8 @@ namespace OrderFlow.IntegrationTests.Infrastructure;
 public sealed class OrderFlowApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     private SqliteConnection _connection = null!;
+
+    public CoordinatedOrderCreationDiagnosticHook DiagnosticHook { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -20,8 +23,10 @@ public sealed class OrderFlowApiFactory : WebApplicationFactory<Program>, IAsync
         {
             services.RemoveAll<DbContextOptions<OrderFlowDbContext>>();
             services.RemoveAll<OrderFlowDbContext>();
+            services.RemoveAll<IOrderCreationDiagnosticHook>();
             services.AddDbContext<OrderFlowDbContext>(options =>
-                options.UseSqlite(_connection));
+                options.UseSqlite(_connection.ConnectionString));
+            services.AddSingleton<IOrderCreationDiagnosticHook>(DiagnosticHook);
 
             using var scope = services.BuildServiceProvider().CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<OrderFlowDbContext>();
@@ -31,7 +36,7 @@ public sealed class OrderFlowApiFactory : WebApplicationFactory<Program>, IAsync
 
     public async Task InitializeAsync()
     {
-        _connection = new SqliteConnection("Data Source=:memory:");
+        _connection = new SqliteConnection("Data Source=orderflow-tests;Mode=Memory;Cache=Shared");
         await _connection.OpenAsync();
     }
 
