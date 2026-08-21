@@ -139,3 +139,6 @@ What this teaches:
 - the transaction and the atomic stock update solve different concerns
 - the atomic update decides whether stock can still be decremented
 - the transaction ensures stock decrement and order creation succeed or fail together
+
+After validating the fix, the temporary diagnostic hook used to force the race
+condition was removed from the application flow.

@@ -14,7 +14,6 @@ internal static class CreateOrderEndpoint
     private static async Task<IResult> HandleAsync(
         CreateOrderRequest request,
         OrderFlowDbContext dbContext,
-        IOrderCreationDiagnosticHook diagnosticHook,
         CancellationToken cancellationToken)
     {
         var validationErrors = ValidateRequest(request);
@@ -65,8 +64,6 @@ internal static class CreateOrderEndpoint
                 });
             }
         }
-
-        await diagnosticHook.AfterStockValidationAsync(cancellationToken);
 
         try
         {

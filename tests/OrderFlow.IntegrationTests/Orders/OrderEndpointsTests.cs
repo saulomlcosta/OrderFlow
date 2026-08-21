@@ -111,54 +111,45 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
 
         var ordersBefore = await CountOrdersAsync();
 
-        _factory.DiagnosticHook.Prepare(expectedParticipants: 2);
+        var firstClient = _factory.CreateClient();
+        var secondClient = _factory.CreateClient();
 
-        try
+        var firstOrderTask = firstClient.PostAsJsonAsync("/orders", new
         {
-            var firstClient = _factory.CreateClient();
-            var secondClient = _factory.CreateClient();
-
-            var firstOrderTask = firstClient.PostAsJsonAsync("/orders", new
+            Items = new[]
             {
-                Items = new[]
+                new
                 {
-                    new
-                    {
-                        ProductId = productId,
-                        Quantity = 1
-                    }
+                    ProductId = productId,
+                    Quantity = 1
                 }
-            });
+            }
+        });
 
-            var secondOrderTask = secondClient.PostAsJsonAsync("/orders", new
-            {
-                Items = new[]
-                {
-                    new
-                    {
-                        ProductId = productId,
-                        Quantity = 1
-                    }
-                }
-            });
-
-            var responses = await Task.WhenAll(firstOrderTask, secondOrderTask);
-
-            var successfulOrders = responses.Count(response => response.StatusCode == HttpStatusCode.Created);
-            var failedOrders = responses.Count(response => response.StatusCode == HttpStatusCode.BadRequest);
-            var ordersAfter = await CountOrdersAsync();
-            var product = await GetProductAsync(productId);
-
-            Assert.Equal(1, successfulOrders);
-            Assert.Equal(1, failedOrders);
-            Assert.Equal(ordersBefore + 1, ordersAfter);
-            Assert.NotNull(product);
-            Assert.Equal(0, product.StockQuantity);
-        }
-        finally
+        var secondOrderTask = secondClient.PostAsJsonAsync("/orders", new
         {
-            _factory.DiagnosticHook.Disable();
-        }
+            Items = new[]
+            {
+                new
+                {
+                    ProductId = productId,
+                    Quantity = 1
+                }
+            }
+        });
+
+        var responses = await Task.WhenAll(firstOrderTask, secondOrderTask);
+
+        var successfulOrders = responses.Count(response => response.StatusCode == HttpStatusCode.Created);
+        var failedOrders = responses.Count(response => response.StatusCode == HttpStatusCode.BadRequest);
+        var ordersAfter = await CountOrdersAsync();
+        var product = await GetProductAsync(productId);
+
+        Assert.Equal(1, successfulOrders);
+        Assert.Equal(1, failedOrders);
+        Assert.Equal(ordersBefore + 1, ordersAfter);
+        Assert.NotNull(product);
+        Assert.Equal(0, product.StockQuantity);
     }
 
     private async Task<Guid> CreateProductAsync(string name, decimal price)

@@ -80,3 +80,6 @@ After reproducing the issue, the first correction chosen was:
 - transaction covering stock decrement and order creation
 
 This was intentionally smaller than introducing a broad concurrency abstraction.
+
+After the fix was validated, the temporary diagnostic hook was removed so the
+main application flow would keep only the behavior required by the business.

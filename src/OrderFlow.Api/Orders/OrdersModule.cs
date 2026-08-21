@@ -7,8 +7,6 @@ internal static class OrdersModule
 {
     internal static IServiceCollection AddOrders(this IServiceCollection services)
     {
-        services.AddSingleton<IOrderCreationDiagnosticHook, NoOpOrderCreationDiagnosticHook>();
-
         return services;
     }
 
