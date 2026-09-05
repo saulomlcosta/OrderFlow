@@ -58,5 +58,16 @@ the initial workflow represents the repository's current reproducible baseline.
 
 ## Next Investigation
 
-Observe the first remote CI execution, then add one minimal end-to-end browser
-journey without duplicating the lifecycle matrix already covered below the UI.
+Add one minimal end-to-end browser journey without duplicating the lifecycle
+matrix already covered below the UI.
+
+## Remote Verification
+
+The first push-triggered workflow completed successfully on a clean Linux
+runner. Backend and frontend jobs both passed, confirming that the repository
+can be restored, built, and tested without relying on the local development
+machine.
+
+- run: `33943950387`
+- backend: passed
+- frontend: passed

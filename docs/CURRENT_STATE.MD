@@ -80,7 +80,7 @@ The repository now has a minimal continuous integration quality gate. Pushes
 and pull requests targeting `master` build and test backend and frontend in
 independent clean Linux jobs. Continuous deployment remains intentionally out
 of scope until hosting, database, migration, secret, and rollback decisions
-exist.
+exist. The first remote execution completed successfully for both jobs.
 
 ## Recent Adjustment
 
