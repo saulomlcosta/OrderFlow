@@ -17,6 +17,7 @@ export interface CheckoutResponse {
   createdAt: string;
   expiresAt: string;
   status: string;
+  isExpired: boolean;
   items: CheckoutItemResponse[];
 }
 

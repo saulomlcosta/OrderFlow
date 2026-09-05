@@ -1,12 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { AppComponent } from './app.component';
-import { provideHttpClient } from '@angular/common/http';
+import { provideRouter } from '@angular/router';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AppComponent],
-      providers: [provideHttpClient()]
+      providers: [provideRouter([])]
     }).compileComponents();
   });
 
@@ -16,17 +16,11 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render the main heading', () => {
+  it('should render the application navigation', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('OrderFlow');
-  });
-
-  it('should render the laboratory subtitle', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('A laboratory UI for products, stock reservation, checkout, and order completion.');
+    expect(compiled.textContent).toContain('Laboratory');
+    expect(compiled.textContent).toContain('Checkout operations');
   });
 });

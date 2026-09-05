@@ -1,0 +1,91 @@
+<main class="shell">
+  <section class="hero panel">
+    <div class="hero-copy">
+      <p class="eyebrow">Customer journey</p>
+      <h1>Purchase laboratory</h1>
+      <p class="hero-text">Create a product, reserve stock, and turn purchase intent into a historical order.</p>
+    </div>
+    <div class="hero-status">
+      <p class="status-label">Current observation</p>
+      <p class="status-copy">{{ message() }}</p>
+      @if (busy()) { <p class="status-busy">{{ busy() }}...</p> }
+    </div>
+  </section>
+
+  @if (error()) {
+    <section class="feedback feedback-error"><strong>Request failed.</strong><span>{{ error() }}</span></section>
+  }
+
+  <section class="guide-grid">
+    <article class="panel">
+      <div class="panel-heading"><p class="step">Step 1</p><h2>Create product</h2></div>
+      <label><span>Name</span><input [ngModel]="productName()" (ngModelChange)="productName.set($event)" /></label>
+      <label><span>Price</span><input type="number" min="0.01" step="0.01" [ngModel]="productPrice()" (ngModelChange)="productPrice.set($event)" /></label>
+      <button type="button" (click)="createProduct()" [disabled]="!!busy()">Create product</button>
+    </article>
+
+    <article class="panel">
+      <div class="panel-heading"><p class="step">Existing data</p><h2>Load product</h2></div>
+      <label><span>Product id</span><input [ngModel]="productIdInput()" (ngModelChange)="productIdInput.set($event)" placeholder="Paste a product id" /></label>
+      <button class="button-secondary" type="button" (click)="loadProduct()" [disabled]="!!busy()">Load product</button>
+    </article>
+  </section>
+
+  <section class="workspace-grid">
+    <article class="panel">
+      <div class="panel-heading"><p class="step">Inventory</p><h2>Product state</h2></div>
+      @if (product(); as product) {
+        <div class="product-header">
+          <div><p class="product-name">{{ product.name }}</p><p class="product-id">{{ product.id }}</p></div>
+          <span class="pill" [attr.data-tone]="productTone()">{{ product.availableStockQuantity }} available</span>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card"><span>Total</span><strong>{{ product.stockQuantity }}</strong></div>
+          <div class="stat-card"><span>Reserved</span><strong>{{ product.reservedStockQuantity }}</strong></div>
+          <div class="stat-card"><span>Available</span><strong>{{ product.availableStockQuantity }}</strong></div>
+          <div class="stat-card"><span>Price</span><strong>{{ product.price | currency:'USD' }}</strong></div>
+        </div>
+        <label><span>Quantity to add</span><input type="number" min="1" [ngModel]="stockQuantity()" (ngModelChange)="stockQuantity.set($event)" /></label>
+        <button type="button" (click)="addStock()" [disabled]="!!busy()">Add stock</button>
+      } @else {
+        <p class="empty-copy">Create or load a product to inspect inventory.</p>
+      }
+    </article>
+
+    <article class="panel">
+      <div class="panel-heading"><p class="step">Reservation</p><h2>Checkout</h2></div>
+      <label><span>Quantity</span><input type="number" min="1" [ngModel]="checkoutQuantity()" (ngModelChange)="checkoutQuantity.set($event)" /></label>
+      <button type="button" (click)="startCheckout()" [disabled]="!!busy()">Start checkout</button>
+      @if (checkout(); as checkout) {
+        <div class="checkout-card">
+          <div class="checkout-topline"><strong>{{ checkout.status }}</strong><span>Expires {{ checkout.expiresAt | date:'short' }}</span></div>
+          <p class="checkout-id">{{ checkout.id }}</p>
+          <p>{{ checkout.items[0].quantity }} unit(s) reserved</p>
+          <div class="actions-row">
+            <button class="button-secondary" type="button" (click)="cancelCheckout()" [disabled]="!!busy() || checkout.status !== 'Active' || checkout.isExpired">Cancel</button>
+            <button type="button" (click)="completeCheckout()" [disabled]="!!busy() || checkout.status !== 'Active' || checkout.isExpired">Complete</button>
+          </div>
+        </div>
+      } @else {
+        <p class="empty-copy">Starting checkout reserves stock without creating an order.</p>
+      }
+    </article>
+
+    <article class="panel">
+      <div class="panel-heading"><p class="step">Commercial fact</p><h2>Order</h2></div>
+      <label><span>Order id</span><input [ngModel]="orderIdInput()" (ngModelChange)="orderIdInput.set($event)" placeholder="Paste an order id" /></label>
+      <button class="button-secondary" type="button" (click)="loadOrder()" [disabled]="!!busy()">Load order</button>
+      @if (order(); as order) {
+        <div class="order-summary">
+          <div class="summary-row"><span>Created</span><strong>{{ order.createdAt | date:'medium' }}</strong></div>
+          <div class="summary-row"><span>Total</span><strong>{{ order.total | currency:'USD' }}</strong></div>
+          @for (item of order.items; track item.productId) {
+            <div class="order-item"><div><p>{{ item.productName }}</p><span>{{ item.quantity }} x {{ item.unitPrice | currency:'USD' }}</span></div></div>
+          }
+        </div>
+      } @else {
+        <p class="empty-copy">A completed checkout produces an immutable commercial snapshot.</p>
+      }
+    </article>
+  </section>
+</main>

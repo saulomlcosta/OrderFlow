@@ -1,3 +1,78 @@
 :host {
   display: block;
 }
+
+.app-header {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 1.25rem 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 12px;
+  color: white;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  font-family: var(--font-display);
+  font-weight: 800;
+}
+
+.brand strong,
+.brand small {
+  display: block;
+}
+
+.brand small {
+  margin-top: 0.1rem;
+  color: var(--muted);
+}
+
+nav {
+  display: flex;
+  gap: 0.3rem;
+  padding: 0.3rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+nav a {
+  padding: 0.65rem 0.9rem;
+  border-radius: 999px;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+nav a.active {
+  color: white;
+  background: var(--ink);
+}
+
+@media (max-width: 640px) {
+  .app-header {
+    width: calc(100% - 1rem);
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  nav {
+    justify-content: center;
+  }
+}

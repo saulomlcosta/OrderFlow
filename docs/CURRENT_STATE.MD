@@ -36,6 +36,9 @@ backend flow rather than a full product experience.
 - Preserve product name and price in historical order items
 - Get an order
 - Exercise the full flow through a local Angular UI
+- Operate checkout reservations through `/admin/checkouts`
+- Inspect active, overdue, completed, and cancelled checkout queues
+- Manually expire overdue reservations and confirm released inventory
 
 ## Current Domain Concepts
 
@@ -51,7 +54,9 @@ backend flow rather than a full product experience.
 Understand the basic order creation flow, persistence, and domain behavior
 before introducing new abstractions or distributed concerns.
 
-The active next investigation is `EXP-003 - Stock Reservation Planning`.
+`EXP-003 - Stock Reservation Planning` established the first complete reservation
+lifecycle. The active investigation now moves to test strategy and isolation as
+the number of business states and user-facing flows grows.
 
 ## Recent Adjustment
 
@@ -64,6 +69,11 @@ exercised directly from `OrderFlow.Api.http`.
 
 The frontend uses a local dev proxy so `npm start` can call the API directly
 while the backend runs on `http://localhost:5216`.
+
+The Angular application now has two explicit user experiences:
+
+- `/` for the purchase laboratory
+- `/admin/checkouts` for reservation operations
 
 Checkout reservations now have an explicit lifecycle boundary:
 
@@ -88,9 +98,10 @@ Checkout reservations now have an explicit lifecycle boundary:
 - Stock reservation protects quantity only, not price
 - No payment processing
 - No cart
+- Frontend dependency audit reports transitive vulnerabilities that still require a deliberate upgrade plan
 
 ## Next Step
 
-Build the first administrative reservation flow around overdue checkouts, then
-use it as a base for future automation, authorization, and payment-related
-evolution.
+Strengthen the automated test strategy around checkout lifecycle behavior,
+frontend orchestration, and test data isolation before introducing
+observability or authorization.

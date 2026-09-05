@@ -32,8 +32,22 @@ export class OrderflowApiService {
     });
   }
 
+  listCheckouts(status: 'active' | 'expired' | 'completed' | 'cancelled') {
+    return this.http.get<CheckoutResponse[]>('/checkouts', {
+      params: { status }
+    });
+  }
+
+  getCheckout(id: string) {
+    return this.http.get<CheckoutResponse>(`/checkouts/${id}`);
+  }
+
   cancelCheckout(id: string) {
     return this.http.post<CheckoutResponse>(`/checkouts/${id}/cancel`, {});
+  }
+
+  expireCheckout(id: string) {
+    return this.http.post<CheckoutResponse>(`/checkouts/${id}/expire`, {});
   }
 
   completeCheckout(id: string) {

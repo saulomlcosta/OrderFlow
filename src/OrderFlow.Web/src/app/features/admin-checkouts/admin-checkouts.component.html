@@ -1,0 +1,118 @@
+<main class="admin-shell">
+  <section class="admin-hero">
+    <div>
+      <p class="eyebrow">Backoffice / Checkout operations</p>
+      <h1>Reservation control room</h1>
+      <p>Find time-sensitive reservations, inspect their inventory impact, and release overdue stock.</p>
+    </div>
+    <div class="operations-note">
+      <span>Current operating model</span>
+      <strong>Human-triggered expiration</strong>
+      <p>A future worker can automate the same domain operation without changing the lifecycle.</p>
+    </div>
+  </section>
+
+  @if (error()) {
+    <section class="admin-feedback error"><strong>Operation failed</strong><span>{{ error() }}</span></section>
+  }
+  @if (notice()) {
+    <section class="admin-feedback success"><strong>Operation completed</strong><span>{{ notice() }}</span></section>
+  }
+
+  <section class="filter-bar" aria-label="Checkout status filters">
+    @for (filter of filters; track filter.value) {
+      <button
+        type="button"
+        [class.selected]="selectedFilter() === filter.value"
+        (click)="selectFilter(filter.value)">
+        {{ filter.label }}
+      </button>
+    }
+    <button class="refresh-button" type="button" (click)="loadCheckouts()" [disabled]="loading()">
+      {{ loading() ? 'Refreshing...' : 'Refresh' }}
+    </button>
+  </section>
+
+  <section class="admin-workspace">
+    <div class="queue-panel">
+      <div class="section-heading">
+        <div><p class="eyebrow">Queue</p><h2>{{ selectedFilter() }} checkouts</h2></div>
+        <span class="count">{{ checkouts().length }}</span>
+      </div>
+
+      @if (loading()) {
+        <div class="empty-state"><strong>Loading reservations</strong><p>Reading the current lifecycle state from the API.</p></div>
+      } @else if (checkouts().length === 0) {
+        <div class="empty-state"><strong>Nothing in this queue</strong><p>There are no checkouts matching this lifecycle filter.</p></div>
+      } @else {
+        <div class="checkout-list">
+          @for (checkout of checkouts(); track checkout.id) {
+            <button
+              type="button"
+              class="checkout-row"
+              [class.active]="selectedCheckout()?.id === checkout.id"
+              (click)="selectCheckout(checkout.id)">
+              <span class="status-dot" [attr.data-tone]="statusTone(checkout)"></span>
+              <span class="row-main">
+                <strong>{{ displayStatus(checkout) }}</strong>
+                <small>{{ checkout.id }}</small>
+              </span>
+              <span class="row-meta">
+                <strong>{{ checkout.items.length }} item(s)</strong>
+                <small>{{ checkout.expiresAt | date:'short' }}</small>
+              </span>
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <aside class="detail-panel">
+      @if (selectedCheckout(); as checkout) {
+        <div class="section-heading">
+          <div><p class="eyebrow">Reservation detail</p><h2>{{ displayStatus(checkout) }}</h2></div>
+          <span class="status-badge" [attr.data-tone]="statusTone(checkout)">{{ checkout.status }}</span>
+        </div>
+
+        <dl class="timeline">
+          <div><dt>Created</dt><dd>{{ checkout.createdAt | date:'medium' }}</dd></div>
+          <div><dt>Expires</dt><dd>{{ checkout.expiresAt | date:'medium' }}</dd></div>
+          <div><dt>Reserved units</dt><dd>{{ reservedUnits() }}</dd></div>
+        </dl>
+
+        <div class="item-list">
+          @for (item of checkout.items; track item.productId) {
+            <article class="item-card">
+              <div>
+                <span>Product</span>
+                <strong>{{ productFor(item.productId)?.name ?? item.productId }}</strong>
+                <small>{{ item.productId }}</small>
+              </div>
+              <div class="inventory-impact">
+                <span>Reserved here</span><strong>{{ item.quantity }}</strong>
+                @if (productFor(item.productId); as product) {
+                  <small>{{ product.availableStockQuantity }} currently available</small>
+                }
+              </div>
+            </article>
+          }
+        </div>
+
+        @if (canExpireSelected()) {
+          <div class="decision-card">
+            <p><strong>This reservation is overdue.</strong> Expiring it will release {{ reservedUnits() }} unit(s) back to availability.</p>
+            <button type="button" (click)="expireSelected()" [disabled]="processingId() === checkout.id">
+              {{ processingId() === checkout.id ? 'Releasing stock...' : 'Expire and release stock' }}
+            </button>
+          </div>
+        } @else {
+          <div class="decision-card neutral">
+            <p>No expiration action is available for this checkout in its current lifecycle state.</p>
+          </div>
+        }
+      } @else {
+        <div class="empty-state detail-empty"><strong>Select a checkout</strong><p>Its timeline, items, and inventory impact will appear here.</p></div>
+      }
+    </aside>
+  </section>
+</main>

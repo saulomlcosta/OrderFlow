@@ -18,6 +18,11 @@ The dev server proxies `/products`, `/checkouts`, and `/orders` to `http://local
 - Cancel or complete that checkout
 - Load the final order snapshot
 
+## Application routes
+
+- `/` provides the guided purchase laboratory
+- `/admin/checkouts` provides checkout lifecycle queues, details, and manual expiration
+
 ## Build
 
 Run `npm run build` to create a production build.
