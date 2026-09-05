@@ -39,6 +39,7 @@ backend flow rather than a full product experience.
 - Operate checkout reservations through `/admin/checkouts`
 - Inspect active, overdue, completed, and cancelled checkout queues
 - Manually expire overdue reservations and confirm released inventory
+- Validate backend and frontend changes through GitHub Actions CI
 
 ## Current Domain Concepts
 
@@ -74,6 +75,12 @@ expiration preserves reservations, repeated terminal operations do not release
 another checkout's stock, and repeated completion neither consumes inventory
 nor creates a second order. The next investigation is one minimal end-to-end
 browser journey.
+
+The repository now has a minimal continuous integration quality gate. Pushes
+and pull requests targeting `master` build and test backend and frontend in
+independent clean Linux jobs. Continuous deployment remains intentionally out
+of scope until hosting, database, migration, secret, and rollback decisions
+exist.
 
 ## Recent Adjustment
 
