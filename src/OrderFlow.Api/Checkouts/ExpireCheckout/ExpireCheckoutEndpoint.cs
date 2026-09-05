@@ -2,13 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using OrderFlow.Api.Common;
 using OrderFlow.Api.Persistence;
 
-namespace OrderFlow.Api.Checkouts.CancelCheckout;
+namespace OrderFlow.Api.Checkouts.ExpireCheckout;
 
-internal static class CancelCheckoutEndpoint
+internal static class ExpireCheckoutEndpoint
 {
-    internal static void MapCancelCheckout(this IEndpointRouteBuilder app)
+    internal static void MapExpireCheckout(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/checkouts/{id:guid}/cancel", HandleAsync);
+        app.MapPost("/checkouts/{id:guid}/expire", HandleAsync);
     }
 
     private static async Task<IResult> HandleAsync(
@@ -30,8 +30,6 @@ internal static class CancelCheckoutEndpoint
         {
             await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-            checkout.Cancel(now);
-
             foreach (var item in checkout.Items)
             {
                 var affectedRows = await dbContext.Inventories
@@ -48,11 +46,12 @@ internal static class CancelCheckoutEndpoint
 
                     return Results.ValidationProblem(new Dictionary<string, string[]>
                     {
-                        ["checkout"] = ["The reservation could not be released consistently."]
+                        ["checkout"] = ["The expired reservation could not be released consistently."]
                     });
                 }
             }
 
+            checkout.Expire(now);
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
 

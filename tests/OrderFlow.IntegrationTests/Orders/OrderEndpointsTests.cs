@@ -19,6 +19,7 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
     [Fact]
     public async Task CompleteCheckout_WithEnoughReservedStock_Succeeds_AndDecreasesInventory()
     {
+        _factory.ResetTime();
         var productId = await CreateProductAsync("Camera", 500m);
         await AddStockAsync(productId, 5);
         var checkoutId = await StartCheckoutAsync(productId, 2);
@@ -39,6 +40,7 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
     [Fact]
     public async Task StartCheckout_WithoutEnoughStock_Fails()
     {
+        _factory.ResetTime();
         var productId = await CreateProductAsync("Printer", 900m);
         await AddStockAsync(productId, 1);
 
@@ -60,6 +62,7 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
     [Fact]
     public async Task GetCompletedCheckoutOrder_Succeeds_AndPreservesProductSnapshot()
     {
+        _factory.ResetTime();
         var productId = await CreateProductAsync("Monitor", 500m);
         await AddStockAsync(productId, 4);
         var checkoutId = await StartCheckoutAsync(productId, 1);
@@ -91,6 +94,7 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
     [Fact]
     public async Task StartCheckout_WithConcurrentBuyers_AllowsOnlyOneReservationAgainstOneUnit()
     {
+        _factory.ResetTime();
         var productId = await CreateProductAsync("Limited Console", 3000m);
         await AddStockAsync(productId, 1);
 
@@ -133,6 +137,29 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
         Assert.Equal(1, product.StockQuantity);
         Assert.Equal(1, product.ReservedStockQuantity);
         Assert.Equal(0, product.AvailableStockQuantity);
+    }
+
+    [Fact]
+    public async Task CompleteCheckout_WhenReservationIsExpired_ReturnsValidationError()
+    {
+        _factory.ResetTime();
+        var productId = await CreateProductAsync("Drone", 1200m);
+        await AddStockAsync(productId, 2);
+        var checkoutId = await StartCheckoutAsync(productId, 1);
+        _factory.AdvanceTime(TimeSpan.FromMinutes(16));
+        var orderCountBeforeCompletion = await CountOrdersAsync();
+
+        var response = await _client.PostAsync($"/checkouts/{checkoutId}/complete", content: null);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var product = await GetProductAsync(productId);
+
+        Assert.NotNull(product);
+        Assert.Equal(2, product.StockQuantity);
+        Assert.Equal(1, product.ReservedStockQuantity);
+        Assert.Equal(1, product.AvailableStockQuantity);
+        Assert.Equal(orderCountBeforeCompletion, await CountOrdersAsync());
     }
 
     private async Task<Guid> CreateProductAsync(string name, decimal price)

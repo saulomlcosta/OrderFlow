@@ -53,23 +53,52 @@ internal sealed class Checkout
         return checkout;
     }
 
-    internal void Complete()
+    internal bool IsExpiredAt(DateTimeOffset now) =>
+        Status == CheckoutStatus.Expired ||
+        (Status == CheckoutStatus.Active && ExpiresAt < now);
+
+    internal void Complete(DateTimeOffset now)
     {
         if (Status != CheckoutStatus.Active)
         {
             throw new DomainValidationException("Only active checkouts can be completed.");
         }
 
+        if (IsExpiredAt(now))
+        {
+            throw new DomainValidationException("Expired checkouts cannot be completed.");
+        }
+
         Status = CheckoutStatus.Completed;
     }
 
-    internal void Cancel()
+    internal void Cancel(DateTimeOffset now)
     {
         if (Status != CheckoutStatus.Active)
         {
             throw new DomainValidationException("Only active checkouts can be cancelled.");
         }
 
+        if (IsExpiredAt(now))
+        {
+            throw new DomainValidationException("Expired checkouts must be released through expiration.");
+        }
+
         Status = CheckoutStatus.Cancelled;
+    }
+
+    internal void Expire(DateTimeOffset now)
+    {
+        if (Status != CheckoutStatus.Active)
+        {
+            throw new DomainValidationException("Only active checkouts can be expired.");
+        }
+
+        if (ExpiresAt >= now)
+        {
+            throw new DomainValidationException("Only overdue checkouts can be expired.");
+        }
+
+        Status = CheckoutStatus.Expired;
     }
 }

@@ -29,6 +29,9 @@ backend flow rather than a full product experience.
 - Get a product with its current stock quantity
 - Start a checkout and reserve quantity
 - Cancel a checkout and release reserved quantity
+- Get a checkout
+- List checkouts by lifecycle filter
+- Expire an overdue checkout and release reserved quantity
 - Complete a checkout into a final order
 - Preserve product name and price in historical order items
 - Get an order
@@ -62,6 +65,13 @@ exercised directly from `OrderFlow.Api.http`.
 The frontend uses a local dev proxy so `npm start` can call the API directly
 while the backend runs on `http://localhost:5216`.
 
+Checkout reservations now have an explicit lifecycle boundary:
+
+- `Active` reservations can be cancelled or completed before `ExpiresAt`
+- overdue reservations can no longer be completed
+- overdue reservations are listed operationally as expired
+- stock is returned only when an explicit expiration action persists `Expired`
+
 ## Known Limitations
 
 - No authentication
@@ -74,13 +84,13 @@ while the backend runs on `http://localhost:5216`.
 - No distributed architecture
 - No authentication-aware frontend flows
 - No broader concurrency strategy beyond protected reservation and stock confirmation flows
-- No automatic reservation expiration
+- No automatic reservation expiration worker
 - Stock reservation protects quantity only, not price
 - No payment processing
 - No cart
 
 ## Next Step
 
-Use the new UI as a learning surface while clarifying the next domain rules
-around reservation lifetime, release, manual administration, and future payment
-integration.
+Build the first administrative reservation flow around overdue checkouts, then
+use it as a base for future automation, authorization, and payment-related
+evolution.

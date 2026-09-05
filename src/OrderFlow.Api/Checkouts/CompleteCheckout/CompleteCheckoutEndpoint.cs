@@ -15,6 +15,7 @@ internal static class CompleteCheckoutEndpoint
     private static async Task<IResult> HandleAsync(
         Guid id,
         OrderFlowDbContext dbContext,
+        TimeProvider timeProvider,
         CancellationToken cancellationToken)
     {
         var checkout = await dbContext.Checkouts.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
@@ -36,6 +37,8 @@ internal static class CompleteCheckoutEndpoint
                 ["checkout"] = ["One or more products referenced by this checkout no longer exist."]
             });
         }
+
+        var now = timeProvider.GetUtcNow();
 
         try
         {
@@ -72,7 +75,7 @@ internal static class CompleteCheckoutEndpoint
                     return OrderItem.Create(product.Id, product.Name, product.Price, item.Quantity);
                 }).ToList());
 
-            checkout.Complete();
+            checkout.Complete(now);
 
             dbContext.Orders.Add(order);
             await dbContext.SaveChangesAsync(cancellationToken);

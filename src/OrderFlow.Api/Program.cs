@@ -7,6 +7,7 @@ using OrderFlow.Api.Products;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddProducts();
 builder.Services.AddInventory();

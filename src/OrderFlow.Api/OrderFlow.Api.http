@@ -44,6 +44,11 @@ GET {{OrderFlow.Api_HostAddress}}/products/{{createProduct.response.body.$.id}}
 Accept: application/json
 
 ###
+# @name getCheckout
+GET {{OrderFlow.Api_HostAddress}}/checkouts/{{startCheckout.response.body.$.id}}
+Accept: application/json
+
+###
 # @name cancelCheckout
 POST {{OrderFlow.Api_HostAddress}}/checkouts/{{startCheckout.response.body.$.id}}/cancel
 
@@ -62,8 +67,36 @@ Content-Type: application/json
 }
 
 ###
+# @name listExpiredCheckouts
+GET {{OrderFlow.Api_HostAddress}}/checkouts?status=expired
+Accept: application/json
+
+###
+# @name expireCheckout
+POST {{OrderFlow.Api_HostAddress}}/checkouts/{{startAnotherCheckout.response.body.$.id}}/expire
+
+###
+# @name getProductAfterExpiration
+GET {{OrderFlow.Api_HostAddress}}/products/{{createProduct.response.body.$.id}}
+Accept: application/json
+
+###
+# @name startFinalCheckout
+POST {{OrderFlow.Api_HostAddress}}/checkouts
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "productId": "{{createProduct.response.body.$.id}}",
+      "quantity": 2
+    }
+  ]
+}
+
+###
 # @name completeCheckout
-POST {{OrderFlow.Api_HostAddress}}/checkouts/{{startAnotherCheckout.response.body.$.id}}/complete
+POST {{OrderFlow.Api_HostAddress}}/checkouts/{{startFinalCheckout.response.body.$.id}}/complete
 
 ###
 # @name getProductAfterCompletion

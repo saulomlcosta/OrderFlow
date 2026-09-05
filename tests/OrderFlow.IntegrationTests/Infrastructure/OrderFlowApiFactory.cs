@@ -10,7 +10,9 @@ namespace OrderFlow.IntegrationTests.Infrastructure;
 
 public sealed class OrderFlowApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    private static readonly DateTimeOffset InitialUtcNow = new(2026, 8, 26, 3, 0, 0, TimeSpan.Zero);
     private SqliteConnection _connection = null!;
+    private readonly MutableTimeProvider _timeProvider = new(InitialUtcNow);
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -18,6 +20,8 @@ public sealed class OrderFlowApiFactory : WebApplicationFactory<Program>, IAsync
 
         builder.ConfigureServices(services =>
         {
+            services.RemoveAll<TimeProvider>();
+            services.AddSingleton<TimeProvider>(_timeProvider);
             services.RemoveAll<DbContextOptions<OrderFlowDbContext>>();
             services.RemoveAll<OrderFlowDbContext>();
             services.AddDbContext<OrderFlowDbContext>(options =>
@@ -33,10 +37,21 @@ public sealed class OrderFlowApiFactory : WebApplicationFactory<Program>, IAsync
     {
         _connection = new SqliteConnection("Data Source=orderflow-tests;Mode=Memory;Cache=Shared");
         await _connection.OpenAsync();
+        ResetTime();
     }
 
     public new async Task DisposeAsync()
     {
         await _connection.DisposeAsync();
+    }
+
+    internal void ResetTime()
+    {
+        _timeProvider.SetUtcNow(InitialUtcNow);
+    }
+
+    internal void AdvanceTime(TimeSpan duration)
+    {
+        _timeProvider.Advance(duration);
     }
 }

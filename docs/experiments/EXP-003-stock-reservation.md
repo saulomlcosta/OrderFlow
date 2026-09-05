@@ -125,7 +125,15 @@ The first implementation decision was:
 - reservation starts at `Start Checkout`
 - reservation protects quantity only
 - price is still determined when the final order is created
-- release is currently explicit through checkout cancellation
+- release is explicit through checkout cancellation or overdue expiration processing
+
+The lifecycle was clarified further on August 26, 2026:
+
+- a checkout remains a real domain concept with its own state
+- `Expired` is distinct from `Cancelled`
+- `UtcNow > ExpiresAt` blocks completion, but does not release stock by itself
+- release of overdue stock is an explicit action that persists `Expired`
+- list queries can treat overdue active checkouts as operationally expired
 
 This keeps the concept smaller while still introducing a real intermediate
 business step between purchase intent and purchase completion.

@@ -5,6 +5,7 @@ internal sealed record CheckoutResponse(
     DateTimeOffset CreatedAt,
     DateTimeOffset ExpiresAt,
     string Status,
+    bool IsExpired,
     IReadOnlyCollection<CheckoutItemResponse> Items);
 
 internal sealed record CheckoutItemResponse(Guid ProductId, int Quantity);

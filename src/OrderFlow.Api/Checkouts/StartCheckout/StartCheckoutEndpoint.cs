@@ -15,6 +15,7 @@ internal static class StartCheckoutEndpoint
     private static async Task<IResult> HandleAsync(
         StartCheckoutRequest request,
         OrderFlowDbContext dbContext,
+        TimeProvider timeProvider,
         CancellationToken cancellationToken)
     {
         var validationErrors = ValidateRequest(request);
@@ -70,7 +71,8 @@ internal static class StartCheckoutEndpoint
             }
 
             var checkout = Checkout.Start(
-                requestedItems.Select(item => CheckoutItem.Create(item.ProductId, item.Quantity)));
+                requestedItems.Select(item => CheckoutItem.Create(item.ProductId, item.Quantity)),
+                createdAt: timeProvider.GetUtcNow());
 
             dbContext.Checkouts.Add(checkout);
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -78,14 +80,7 @@ internal static class StartCheckoutEndpoint
 
             return Results.Created(
                 $"/checkouts/{checkout.Id}",
-                new CheckoutResponse(
-                    checkout.Id,
-                    checkout.CreatedAt,
-                    checkout.ExpiresAt,
-                    checkout.Status.ToString(),
-                    checkout.Items
-                        .Select(item => new CheckoutItemResponse(item.ProductId, item.Quantity))
-                        .ToList()));
+                checkout.ToResponse(timeProvider.GetUtcNow()));
         }
         catch (DomainValidationException exception)
         {
