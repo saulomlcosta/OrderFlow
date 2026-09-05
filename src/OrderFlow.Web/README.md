@@ -30,3 +30,7 @@ Run `npm run build` to create a production build.
 ## Tests
 
 Run `npm test` to execute the Angular unit tests.
+
+Run `npm run test:e2e` to execute the complete purchase journey in Chromium.
+Playwright starts the backend and frontend automatically when they are not
+already running.

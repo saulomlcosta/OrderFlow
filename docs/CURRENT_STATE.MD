@@ -40,6 +40,7 @@ backend flow rather than a full product experience.
 - Inspect active, overdue, completed, and cancelled checkout queues
 - Manually expire overdue reservations and confirm released inventory
 - Validate backend and frontend changes through GitHub Actions CI
+- Validate the complete purchase journey through a real browser
 
 ## Current Domain Concepts
 
@@ -81,6 +82,12 @@ and pull requests targeting `master` build and test backend and frontend in
 independent clean Linux jobs. Continuous deployment remains intentionally out
 of scope until hosting, database, migration, secret, and rollback decisions
 exist. The first remote execution completed successfully for both jobs.
+
+Playwright now protects one end-to-end customer journey across Angular, the
+development proxy, ASP.NET Core, domain behavior, and SQLite persistence. The
+test creates a product, adds stock, reserves quantity, completes checkout, and
+observes the resulting order. It runs only after the faster backend and frontend
+CI jobs pass.
 
 ## Recent Adjustment
 
