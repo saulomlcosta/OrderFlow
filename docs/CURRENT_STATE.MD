@@ -66,8 +66,14 @@ backend integration-test isolation and a minimal end-to-end journey.
 Integration tests now share the application factory for speed while resetting
 the SQLite in-memory database and mutable clock before every test case. An
 explicit isolation contract proves that data created by one test is not visible
-to the next. The next investigation is the checkout transition matrix, followed
-by one minimal end-to-end browser journey.
+to the next.
+
+The checkout lifecycle transition matrix is now executable at the domain level.
+Integration tests additionally protect the highest-risk effects: a premature
+expiration preserves reservations, repeated terminal operations do not release
+another checkout's stock, and repeated completion neither consumes inventory
+nor creates a second order. The next investigation is one minimal end-to-end
+browser journey.
 
 ## Recent Adjustment
 

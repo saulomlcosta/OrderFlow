@@ -69,6 +69,31 @@ public class CheckoutEndpointsTests(OrderFlowApiFactory factory) : IntegrationTe
     }
 
     [Fact]
+    public async Task CancelCheckout_WhenAlreadyCancelled_DoesNotReleaseAnotherReservation()
+    {
+        var productId = await CreateProductAsync("Microphone", 650m);
+        await AddStockAsync(productId, 3);
+        var firstCheckoutId = await StartCheckoutAsync(productId, 1);
+        await StartCheckoutAsync(productId, 1);
+
+        var firstResponse = await _client.PostAsync(
+            $"/checkouts/{firstCheckoutId}/cancel",
+            content: null);
+        var repeatedResponse = await _client.PostAsync(
+            $"/checkouts/{firstCheckoutId}/cancel",
+            content: null);
+
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, repeatedResponse.StatusCode);
+
+        var product = await GetProductAsync(productId);
+        Assert.NotNull(product);
+        Assert.Equal(3, product.StockQuantity);
+        Assert.Equal(1, product.ReservedStockQuantity);
+        Assert.Equal(2, product.AvailableStockQuantity);
+    }
+
+    [Fact]
     public async Task CompleteCheckout_CreatesOrder_AndConsumesReservedQuantity()
     {
         var productId = await CreateProductAsync("Desk", 900m);
@@ -130,6 +155,50 @@ public class CheckoutEndpointsTests(OrderFlowApiFactory factory) : IntegrationTe
         Assert.Equal(3, product.StockQuantity);
         Assert.Equal(0, product.ReservedStockQuantity);
         Assert.Equal(3, product.AvailableStockQuantity);
+    }
+
+    [Fact]
+    public async Task ExpireCheckout_WhenReservationIsNotOverdue_PreservesReservation()
+    {
+        var productId = await CreateProductAsync("Watch", 700m);
+        await AddStockAsync(productId, 3);
+        var checkoutId = await StartCheckoutAsync(productId, 2);
+
+        var response = await _client.PostAsync($"/checkouts/{checkoutId}/expire", content: null);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var product = await GetProductAsync(productId);
+        Assert.NotNull(product);
+        Assert.Equal(3, product.StockQuantity);
+        Assert.Equal(2, product.ReservedStockQuantity);
+        Assert.Equal(1, product.AvailableStockQuantity);
+    }
+
+    [Fact]
+    public async Task ExpireCheckout_WhenAlreadyExpired_DoesNotReleaseAnotherReservation()
+    {
+        var productId = await CreateProductAsync("Handheld", 1800m);
+        await AddStockAsync(productId, 3);
+        var firstCheckoutId = await StartCheckoutAsync(productId, 1);
+        await StartCheckoutAsync(productId, 1);
+        _factory.AdvanceTime(TimeSpan.FromMinutes(16));
+
+        var firstResponse = await _client.PostAsync(
+            $"/checkouts/{firstCheckoutId}/expire",
+            content: null);
+        var repeatedResponse = await _client.PostAsync(
+            $"/checkouts/{firstCheckoutId}/expire",
+            content: null);
+
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, repeatedResponse.StatusCode);
+
+        var product = await GetProductAsync(productId);
+        Assert.NotNull(product);
+        Assert.Equal(3, product.StockQuantity);
+        Assert.Equal(1, product.ReservedStockQuantity);
+        Assert.Equal(2, product.AvailableStockQuantity);
     }
 
     [Fact]

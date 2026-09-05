@@ -157,6 +157,31 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory) : IntegrationTestB
         Assert.Equal(orderCountBeforeCompletion, await CountOrdersAsync());
     }
 
+    [Fact]
+    public async Task CompleteCheckout_WhenAlreadyCompleted_DoesNotConsumeStockOrCreateAnotherOrder()
+    {
+        var productId = await CreateProductAsync("Projector", 2100m);
+        await AddStockAsync(productId, 5);
+        var checkoutId = await StartCheckoutAsync(productId, 2);
+
+        var firstResponse = await _client.PostAsync(
+            $"/checkouts/{checkoutId}/complete",
+            content: null);
+        var repeatedResponse = await _client.PostAsync(
+            $"/checkouts/{checkoutId}/complete",
+            content: null);
+
+        Assert.Equal(HttpStatusCode.Created, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, repeatedResponse.StatusCode);
+
+        var product = await GetProductAsync(productId);
+        Assert.NotNull(product);
+        Assert.Equal(3, product.StockQuantity);
+        Assert.Equal(0, product.ReservedStockQuantity);
+        Assert.Equal(3, product.AvailableStockQuantity);
+        Assert.Equal(1, await CountOrdersAsync());
+    }
+
     private async Task<Guid> CreateProductAsync(string name, decimal price)
     {
         var response = await _client.PostAsJsonAsync("/products", new
