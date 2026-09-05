@@ -58,6 +58,11 @@ before introducing new abstractions or distributed concerns.
 lifecycle. The active investigation now moves to test strategy and isolation as
 the number of business states and user-facing flows grows.
 
+`EXP-004 - Automated Test Strategy` has started with behavioral component tests
+for both Angular features. The frontend now verifies user-visible behavior with
+controlled API collaborators, while the next test investigation will focus on
+backend integration-test isolation and a minimal end-to-end journey.
+
 ## Recent Adjustment
 
 Kept one DbContext for transactional simplicity, but moved EF Core mapping details
