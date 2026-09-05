@@ -7,7 +7,7 @@ using OrderFlow.IntegrationTests.Infrastructure;
 namespace OrderFlow.IntegrationTests.Checkouts;
 
 [Collection(nameof(OrderFlowApiCollection))]
-public class CheckoutEndpointsTests(OrderFlowApiFactory factory)
+public class CheckoutEndpointsTests(OrderFlowApiFactory factory) : IntegrationTestBase(factory)
 {
     private readonly OrderFlowApiFactory _factory = factory;
     private readonly HttpClient _client = factory.CreateClient();
@@ -15,7 +15,6 @@ public class CheckoutEndpointsTests(OrderFlowApiFactory factory)
     [Fact]
     public async Task StartCheckout_WithEnoughStock_ReservesQuantity()
     {
-        _factory.ResetTime();
         var productId = await CreateProductAsync("Console", 2500m);
         await AddStockAsync(productId, 5);
 
@@ -48,7 +47,6 @@ public class CheckoutEndpointsTests(OrderFlowApiFactory factory)
     [Fact]
     public async Task CancelCheckout_ReleasesReservedQuantity()
     {
-        _factory.ResetTime();
         var productId = await CreateProductAsync("Chair", 500m);
         await AddStockAsync(productId, 4);
 
@@ -73,7 +71,6 @@ public class CheckoutEndpointsTests(OrderFlowApiFactory factory)
     [Fact]
     public async Task CompleteCheckout_CreatesOrder_AndConsumesReservedQuantity()
     {
-        _factory.ResetTime();
         var productId = await CreateProductAsync("Desk", 900m);
         await AddStockAsync(productId, 5);
 
@@ -94,7 +91,6 @@ public class CheckoutEndpointsTests(OrderFlowApiFactory factory)
     [Fact]
     public async Task CancelCheckout_WhenReservationIsExpired_ReturnsValidationError()
     {
-        _factory.ResetTime();
         var productId = await CreateProductAsync("Headphones", 300m);
         await AddStockAsync(productId, 2);
         var checkoutId = await StartCheckoutAsync(productId, 1);
@@ -115,7 +111,6 @@ public class CheckoutEndpointsTests(OrderFlowApiFactory factory)
     [Fact]
     public async Task ExpireCheckout_ReleasesReservedQuantity_AndChangesStatus()
     {
-        _factory.ResetTime();
         var productId = await CreateProductAsync("Speaker", 800m);
         await AddStockAsync(productId, 3);
         var checkoutId = await StartCheckoutAsync(productId, 2);
@@ -140,7 +135,6 @@ public class CheckoutEndpointsTests(OrderFlowApiFactory factory)
     [Fact]
     public async Task ListExpiredCheckouts_ReturnsOperationallyExpiredCheckouts()
     {
-        _factory.ResetTime();
         var productId = await CreateProductAsync("Tablet", 1500m);
         await AddStockAsync(productId, 2);
         var checkoutId = await StartCheckoutAsync(productId, 1);

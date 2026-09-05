@@ -11,7 +11,7 @@ using OrderFlow.IntegrationTests.Infrastructure;
 namespace OrderFlow.IntegrationTests.Orders;
 
 [Collection(nameof(OrderFlowApiCollection))]
-public class OrderEndpointsTests(OrderFlowApiFactory factory)
+public class OrderEndpointsTests(OrderFlowApiFactory factory) : IntegrationTestBase(factory)
 {
     private readonly OrderFlowApiFactory _factory = factory;
     private readonly HttpClient _client = factory.CreateClient();
@@ -19,7 +19,6 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
     [Fact]
     public async Task CompleteCheckout_WithEnoughReservedStock_Succeeds_AndDecreasesInventory()
     {
-        _factory.ResetTime();
         var productId = await CreateProductAsync("Camera", 500m);
         await AddStockAsync(productId, 5);
         var checkoutId = await StartCheckoutAsync(productId, 2);
@@ -40,7 +39,6 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
     [Fact]
     public async Task StartCheckout_WithoutEnoughStock_Fails()
     {
-        _factory.ResetTime();
         var productId = await CreateProductAsync("Printer", 900m);
         await AddStockAsync(productId, 1);
 
@@ -62,7 +60,6 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
     [Fact]
     public async Task GetCompletedCheckoutOrder_Succeeds_AndPreservesProductSnapshot()
     {
-        _factory.ResetTime();
         var productId = await CreateProductAsync("Monitor", 500m);
         await AddStockAsync(productId, 4);
         var checkoutId = await StartCheckoutAsync(productId, 1);
@@ -94,7 +91,6 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
     [Fact]
     public async Task StartCheckout_WithConcurrentBuyers_AllowsOnlyOneReservationAgainstOneUnit()
     {
-        _factory.ResetTime();
         var productId = await CreateProductAsync("Limited Console", 3000m);
         await AddStockAsync(productId, 1);
 
@@ -142,7 +138,6 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory)
     [Fact]
     public async Task CompleteCheckout_WhenReservationIsExpired_ReturnsValidationError()
     {
-        _factory.ResetTime();
         var productId = await CreateProductAsync("Drone", 1200m);
         await AddStockAsync(productId, 2);
         var checkoutId = await StartCheckoutAsync(productId, 1);

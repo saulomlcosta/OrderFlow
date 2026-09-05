@@ -35,7 +35,8 @@ public sealed class OrderFlowApiFactory : WebApplicationFactory<Program>, IAsync
 
     public async Task InitializeAsync()
     {
-        _connection = new SqliteConnection("Data Source=orderflow-tests;Mode=Memory;Cache=Shared");
+        _connection = new SqliteConnection(
+            "Data Source=orderflow-tests;Mode=Memory;Cache=Shared;Pooling=False");
         await _connection.OpenAsync();
         ResetTime();
     }
@@ -53,5 +54,17 @@ public sealed class OrderFlowApiFactory : WebApplicationFactory<Program>, IAsync
     internal void AdvanceTime(TimeSpan duration)
     {
         _timeProvider.Advance(duration);
+    }
+
+    internal async Task ResetStateAsync()
+    {
+        ResetTime();
+
+        await _connection.CloseAsync();
+        await _connection.OpenAsync();
+
+        await using var scope = Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<OrderFlowDbContext>();
+        await dbContext.Database.EnsureCreatedAsync();
     }
 }

@@ -6,7 +6,7 @@ using OrderFlow.IntegrationTests.Infrastructure;
 namespace OrderFlow.IntegrationTests.Products;
 
 [Collection(nameof(OrderFlowApiCollection))]
-public class ProductEndpointsTests(OrderFlowApiFactory factory)
+public class ProductEndpointsTests(OrderFlowApiFactory factory) : IntegrationTestBase(factory)
 {
     private readonly HttpClient _client = factory.CreateClient();
 

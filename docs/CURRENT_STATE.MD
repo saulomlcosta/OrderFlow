@@ -63,6 +63,12 @@ for both Angular features. The frontend now verifies user-visible behavior with
 controlled API collaborators, while the next test investigation will focus on
 backend integration-test isolation and a minimal end-to-end journey.
 
+Integration tests now share the application factory for speed while resetting
+the SQLite in-memory database and mutable clock before every test case. An
+explicit isolation contract proves that data created by one test is not visible
+to the next. The next investigation is the checkout transition matrix, followed
+by one minimal end-to-end browser journey.
+
 ## Recent Adjustment
 
 Kept one DbContext for transactional simplicity, but moved EF Core mapping details
