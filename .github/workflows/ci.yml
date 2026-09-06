@@ -50,6 +50,8 @@ jobs:
         run: dotnet build OrderFlow.slnx --configuration Release --no-restore
 
       - name: Test
+        env:
+          ORDERFLOW_RUN_POSTGRESQL_TESTS: true
         run: dotnet test OrderFlow.slnx --configuration Release --no-build --verbosity normal
 
       - name: Smoke test PostgreSQL persistence

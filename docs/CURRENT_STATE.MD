@@ -45,6 +45,7 @@ backend flow rather than a full product experience.
 - Manually expire overdue reservations and confirm released inventory
 - Validate backend, frontend, and PostgreSQL startup through GitHub Actions CI
 - Validate the complete purchase journey through a real browser
+- Validate critical reservation and completion concurrency against PostgreSQL
 
 ## Current Domain Concepts
 
@@ -95,6 +96,12 @@ observes the resulting order. It runs only after the faster backend and frontend
 CI jobs pass. The first remote Linux execution passed all three jobs: backend,
 frontend, and end-to-end.
 
+Two opt-in PostgreSQL integration tests now exercise the highest-risk concurrent
+writes against the real provider. Twenty simultaneous checkout requests against
+five units produce exactly five reservations, while ten simultaneous completion
+requests against one checkout produce exactly one order. The default local test
+run skips these two tests unless `ORDERFLOW_RUN_POSTGRESQL_TESTS=true` is set.
+
 ## Recent Adjustment
 
 Kept one DbContext for transactional simplicity, but moved EF Core mapping details
@@ -139,6 +146,6 @@ Checkout reservations now have an explicit lifecycle boundary:
 
 ## Next Step
 
-Run the highest-risk stock reservation and checkout concurrency behavior against
-PostgreSQL to expose provider-specific transaction and locking differences that
-the fast SQLite integration suite cannot prove.
+Introduce one small, business-justified schema change and generate a second EF
+Core migration. Apply it to the existing PostgreSQL volume without losing data,
+inspect the generated SQL, and practice both forward migration and rollback.

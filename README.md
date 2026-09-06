@@ -57,6 +57,15 @@ Backend tests use isolated SQLite in-memory databases and do not require Docker:
 dotnet test OrderFlow.slnx
 ```
 
+With PostgreSQL running, explicitly include the slower provider-specific
+concurrency tests:
+
+```powershell
+$env:ORDERFLOW_RUN_POSTGRESQL_TESTS = "true"
+dotnet test OrderFlow.slnx
+Remove-Item Env:ORDERFLOW_RUN_POSTGRESQL_TESTS
+```
+
 Frontend behavioral and browser tests also remain self-contained:
 
 ```powershell

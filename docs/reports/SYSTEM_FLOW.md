@@ -14,7 +14,7 @@ how the system behaves. Git history preserves each previous snapshot.
 | Baseline commit | `27ea7be` |
 | Persistence | EF Core with PostgreSQL 18 for Development and SQLite in-memory for tests |
 | User interfaces | Angular purchase laboratory and checkout administration |
-| Automation | Backend, frontend, and Playwright E2E jobs in GitHub Actions |
+| Automation | Backend, PostgreSQL concurrency, frontend, and Playwright E2E checks in GitHub Actions |
 
 ## Flow Diagram
 
@@ -92,6 +92,8 @@ flowchart TD
 - SQLite in-memory remains a deliberate substitution for isolated integration
   and browser tests.
 - Unit, integration, Angular behavioral, and browser E2E tests protect the flow.
+- Opt-in PostgreSQL tests validate atomic reservation and idempotent completion
+  under concurrent requests against the real provider.
 
 ## Known Missing Flows
 
@@ -109,3 +111,4 @@ flowchart TD
 | --- | --- | --- |
 | 2026-09-06 | V1 baseline | Recorded the complete purchase, cancellation, and manual expiration flows. |
 | 2026-09-06 | Persistent Development | Added PostgreSQL, Docker volume, and EF Core migrations without changing business flows. |
+| 2026-09-06 | PostgreSQL concurrency | Verified reservation limits and single-order completion without changing business flows. |
