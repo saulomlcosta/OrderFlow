@@ -24,7 +24,8 @@ at nearly the same time. The test does not coordinate application internals or
 database operations after release.
 
 The tests use the same ASP.NET Core application and PostgreSQL migration as
-Development. Tables are truncated before each scenario to preserve isolation.
+Development. They create a separate `orderflow_tests` database and truncate its
+tables before each scenario, preserving both test isolation and Development data.
 
 ## Result
 

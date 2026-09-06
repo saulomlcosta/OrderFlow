@@ -66,6 +66,9 @@ dotnet test OrderFlow.slnx
 Remove-Item Env:ORDERFLOW_RUN_POSTGRESQL_TESTS
 ```
 
+These tests create and truncate a separate `orderflow_tests` database. They do
+not clean or modify the `orderflow` Development database.
+
 Frontend behavioral and browser tests also remain self-contained:
 
 ```powershell
