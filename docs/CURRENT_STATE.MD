@@ -8,6 +8,9 @@ V1 - Initial implementation
 
 Validate the simplest end-to-end order flow before adding architectural complexity.
 
+The current business and architecture map is maintained in
+[`reports/SYSTEM_FLOW.md`](reports/SYSTEM_FLOW.md).
+
 ## Current Architecture
 
 Single ASP.NET Core Minimal API application with one .NET project for the main app.
