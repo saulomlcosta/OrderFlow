@@ -17,13 +17,16 @@ public sealed class OrderFlowApiFactory : WebApplicationFactory<Program>, IAsync
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
+        builder.UseSetting("Persistence:Provider", "SqliteInMemory");
 
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<TimeProvider>();
             services.AddSingleton<TimeProvider>(_timeProvider);
+            services.RemoveAll<SqliteConnection>();
             services.RemoveAll<DbContextOptions<OrderFlowDbContext>>();
             services.RemoveAll<OrderFlowDbContext>();
+            services.AddSingleton(_connection);
             services.AddDbContext<OrderFlowDbContext>(options =>
                 options.UseSqlite(_connection.ConnectionString));
 

@@ -12,7 +12,7 @@ how the system behaves. Git history preserves each previous snapshot.
 | Recorded at | 2026-09-06 |
 | Project stage | V1 - Initial implementation |
 | Baseline commit | `27ea7be` |
-| Persistence | EF Core with SQLite in-memory for Development |
+| Persistence | EF Core with PostgreSQL 18 for Development and SQLite in-memory for tests |
 | User interfaces | Angular purchase laboratory and checkout administration |
 | Automation | Backend, frontend, and Playwright E2E jobs in GitHub Actions |
 
@@ -52,6 +52,15 @@ flowchart TD
     Expire --> Release["ReservedQuantity -= quantity"]
     Release --> Expired["Checkout Expired persisted"]
 
+    Product --> Db[("PostgreSQL 18<br/>Docker volume")]
+    EmptyInventory --> Db
+    Inventory --> Db
+    Active --> Db
+    Completed --> Db
+    Cancelled --> Db
+    Expired --> Db
+    Order --> Db
+
     User --> Reads["Available queries"]
     Reads --> GetProduct["GET /products/{id}"]
     Reads --> GetCheckout["GET /checkouts/{id}"]
@@ -77,7 +86,11 @@ flowchart TD
 - ASP.NET Core exposes feature-oriented Minimal API endpoints.
 - Products, Inventory, Checkouts, and Orders are logical modules in one process.
 - One EF Core DbContext and database transaction coordinate cross-module writes.
-- Development data is transient and starts empty after each API restart.
+- PostgreSQL runs in Docker and stores Development data in a named volume.
+- EF Core migrations evolve the PostgreSQL schema and are applied at local
+  Development startup.
+- SQLite in-memory remains a deliberate substitution for isolated integration
+  and browser tests.
 - Unit, integration, Angular behavioral, and browser E2E tests protect the flow.
 
 ## Known Missing Flows
@@ -95,3 +108,4 @@ flowchart TD
 | Date | Stage | Change |
 | --- | --- | --- |
 | 2026-09-06 | V1 baseline | Recorded the complete purchase, cancellation, and manual expiration flows. |
+| 2026-09-06 | Persistent Development | Added PostgreSQL, Docker volume, and EF Core migrations without changing business flows. |

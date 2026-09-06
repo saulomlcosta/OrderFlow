@@ -19,6 +19,20 @@ jobs:
     name: Backend
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:18.6-alpine
+        env:
+          POSTGRES_DB: orderflow
+          POSTGRES_USER: orderflow
+          POSTGRES_PASSWORD: orderflow-dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U orderflow -d orderflow"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - name: Check out repository
@@ -37,6 +51,25 @@ jobs:
 
       - name: Test
         run: dotnet test OrderFlow.slnx --configuration Release --no-build --verbosity normal
+
+      - name: Smoke test PostgreSQL persistence
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+          ASPNETCORE_URLS: http://localhost:5216
+        run: |
+          dotnet run --project src/OrderFlow.Api/OrderFlow.Api.csproj --configuration Release --no-build --no-launch-profile > /tmp/orderflow-api.log 2>&1 &
+          api_pid=$!
+          trap 'kill $api_pid 2>/dev/null || true' EXIT
+
+          if ! curl --fail --retry 20 --retry-connrefused --retry-delay 1 http://localhost:5216/openapi/v1.json > /dev/null; then
+            cat /tmp/orderflow-api.log
+            exit 1
+          fi
+
+          curl --fail \
+            --header "Content-Type: application/json" \
+            --data '{"name":"CI PostgreSQL Product","price":10.00}' \
+            http://localhost:5216/products > /dev/null
 
   frontend:
     name: Frontend

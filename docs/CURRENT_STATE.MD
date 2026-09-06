@@ -17,9 +17,10 @@ Single ASP.NET Core Minimal API application with one .NET project for the main a
 Persistence still uses one shared EF Core DbContext, but entity mappings now live
 close to their modules so logical boundaries remain visible inside the monolith.
 
-For local development runs, the API now uses SQLite in-memory so the application
-starts with a clean transient dataset each time `dotnet run` is executed in the
-Development environment.
+For local development runs, the API now uses PostgreSQL 18 in Docker with a
+named volume. EF Core applies pending migrations at Development startup, so data
+survives API and container restarts. SQLite in-memory remains an explicit test
+provider for fast and isolated integration and browser tests.
 
 The repository now also contains a small Angular 18 frontend written in
 TypeScript. It is intentionally a thin laboratory UI that exercises the current
@@ -42,7 +43,7 @@ backend flow rather than a full product experience.
 - Operate checkout reservations through `/admin/checkouts`
 - Inspect active, overdue, completed, and cancelled checkout queues
 - Manually expire overdue reservations and confirm released inventory
-- Validate backend and frontend changes through GitHub Actions CI
+- Validate backend, frontend, and PostgreSQL startup through GitHub Actions CI
 - Validate the complete purchase journey through a real browser
 
 ## Current Domain Concepts
@@ -84,8 +85,11 @@ independent clean Linux jobs. Continuous deployment remains intentionally out
 of scope until hosting, database, migration, secret, and rollback decisions
 exist. The first remote execution completed successfully for both jobs.
 
+The backend job now also starts PostgreSQL, applies the current migration through
+API startup, and writes one product as a persistence smoke test.
+
 Playwright now protects one end-to-end customer journey across Angular, the
-development proxy, ASP.NET Core, domain behavior, and SQLite persistence. The
+development proxy, ASP.NET Core, domain behavior, and isolated SQLite persistence. The
 test creates a product, adds stock, reserves quantity, completes checkout, and
 observes the resulting order. It runs only after the faster backend and frontend
 CI jobs pass. The first remote Linux execution passed all three jobs: backend,
@@ -123,7 +127,7 @@ Checkout reservations now have an explicit lifecycle boundary:
 - No messaging
 - No caching
 - No observability
-- No containerization
+- API and frontend are not containerized
 - No distributed architecture
 - No authentication-aware frontend flows
 - No broader concurrency strategy beyond protected reservation and stock confirmation flows
@@ -135,6 +139,6 @@ Checkout reservations now have an explicit lifecycle boundary:
 
 ## Next Step
 
-Create a reproducible persistent environment with Docker and PostgreSQL, then
-use it to expose and learn the differences between ephemeral test persistence
-and a real database lifecycle.
+Run the highest-risk stock reservation and checkout concurrency behavior against
+PostgreSQL to expose provider-specific transaction and locking differences that
+the fast SQLite integration suite cannot prove.

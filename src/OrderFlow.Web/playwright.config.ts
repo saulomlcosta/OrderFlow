@@ -28,7 +28,8 @@ export default defineConfig({
       url: 'http://localhost:5216/openapi/v1.json',
       env: {
         ASPNETCORE_ENVIRONMENT: 'Development',
-        ASPNETCORE_URLS: 'http://localhost:5216'
+        ASPNETCORE_URLS: 'http://localhost:5216',
+        Persistence__Provider: 'SqliteInMemory'
       },
       reuseExistingServer: !process.env['CI'],
       timeout: 120_000
