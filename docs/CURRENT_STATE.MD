@@ -60,10 +60,9 @@ before introducing new abstractions or distributed concerns.
 lifecycle. The active investigation now moves to test strategy and isolation as
 the number of business states and user-facing flows grows.
 
-`EXP-004 - Automated Test Strategy` has started with behavioral component tests
-for both Angular features. The frontend now verifies user-visible behavior with
-controlled API collaborators, while the next test investigation will focus on
-backend integration-test isolation and a minimal end-to-end journey.
+`EXP-004 - Automated Test Strategy` now covers behavioral component tests for
+both Angular features, isolated backend integration tests, an executable domain
+transition matrix, and one minimal end-to-end browser journey.
 
 Integration tests now share the application factory for speed while resetting
 the SQLite in-memory database and mutable clock before every test case. An
@@ -74,8 +73,7 @@ The checkout lifecycle transition matrix is now executable at the domain level.
 Integration tests additionally protect the highest-risk effects: a premature
 expiration preserves reservations, repeated terminal operations do not release
 another checkout's stock, and repeated completion neither consumes inventory
-nor creates a second order. The next investigation is one minimal end-to-end
-browser journey.
+nor creates a second order.
 
 The repository now has a minimal continuous integration quality gate. Pushes
 and pull requests targeting `master` build and test backend and frontend in
@@ -87,7 +85,8 @@ Playwright now protects one end-to-end customer journey across Angular, the
 development proxy, ASP.NET Core, domain behavior, and SQLite persistence. The
 test creates a product, adds stock, reserves quantity, completes checkout, and
 observes the resulting order. It runs only after the faster backend and frontend
-CI jobs pass.
+CI jobs pass. The first remote Linux execution passed all three jobs: backend,
+frontend, and end-to-end.
 
 ## Recent Adjustment
 
@@ -133,6 +132,6 @@ Checkout reservations now have an explicit lifecycle boundary:
 
 ## Next Step
 
-Strengthen the automated test strategy around checkout lifecycle behavior,
-frontend orchestration, and test data isolation before introducing
-observability or authorization.
+Create a reproducible persistent environment with Docker and PostgreSQL, then
+use it to expose and learn the differences between ephemeral test persistence
+and a real database lifecycle.

@@ -44,9 +44,12 @@ for seven days.
 - one Chromium journey passed locally
 - browser interaction completed in approximately three seconds
 - complete local Playwright execution completed in approximately seventeen seconds
+- GitHub Actions run `33944673767` passed the Backend, Frontend, and End-to-end
+  jobs on Linux
 
 ## Next Investigation
 
-Observe the remote Linux execution. The next product-infrastructure step is a
-reproducible persistent environment with Docker and PostgreSQL; dependency
-security warnings remain a separate maintenance investigation.
+Build a reproducible persistent environment with Docker and PostgreSQL. This
+will let the laboratory compare ephemeral SQLite test persistence with a real
+database lifecycle; dependency security warnings remain a separate maintenance
+investigation.
