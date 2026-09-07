@@ -61,6 +61,10 @@ flowchart TD
     Expired --> Db
     Order --> Db
 
+    Monitor["CI / future orchestrator"] --> Live["Liveness<br/>GET /health/live<br/>process only"]
+    Monitor --> Ready["Readiness<br/>GET /health/ready"]
+    Ready --> Db
+
     User --> Reads["Available queries"]
     Reads --> GetProduct["GET /products/{id}"]
     Reads --> GetCheckout["GET /checkouts/{id}"]
@@ -99,6 +103,8 @@ flowchart TD
 - Unit, integration, Angular behavioral, and browser E2E tests protect the flow.
 - Opt-in PostgreSQL tests validate atomic reservation and idempotent completion
   under concurrent requests against the real provider.
+- Liveness reports whether the process answers HTTP without consulting external
+  dependencies; readiness additionally verifies database connectivity.
 
 ## Known Missing Flows
 
@@ -118,3 +124,4 @@ flowchart TD
 | 2026-09-06 | Persistent Development | Added PostgreSQL, Docker volume, and EF Core migrations without changing business flows. |
 | 2026-09-06 | PostgreSQL concurrency | Verified reservation limits and single-order completion without changing business flows. |
 | 2026-09-07 | Schema evolution | Linked new orders to their originating checkout and validated forward and rollback migrations. |
+| 2026-09-07 | Operational health | Added separate process liveness and database readiness signals. |

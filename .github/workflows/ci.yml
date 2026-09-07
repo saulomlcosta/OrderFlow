@@ -63,7 +63,7 @@ jobs:
           api_pid=$!
           trap 'kill $api_pid 2>/dev/null || true' EXIT
 
-          if ! curl --fail --retry 20 --retry-connrefused --retry-delay 1 http://localhost:5216/openapi/v1.json > /dev/null; then
+          if ! curl --fail --retry 20 --retry-connrefused --retry-delay 1 http://localhost:5216/health/ready > /dev/null; then
             cat /tmp/orderflow-api.log
             exit 1
           fi

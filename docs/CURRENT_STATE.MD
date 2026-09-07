@@ -47,6 +47,7 @@ backend flow rather than a full product experience.
 - Validate backend, frontend, and PostgreSQL startup through GitHub Actions CI
 - Validate the complete purchase journey through a real browser
 - Validate critical reservation and completion concurrency against PostgreSQL
+- Report process liveness and database-backed readiness through health endpoints
 
 ## Current Domain Concepts
 
@@ -114,6 +115,12 @@ The migration was applied to the existing Development volume without losing its
 legacy order. Its `Down` path was exercised against the isolated test database,
 then the migration was applied again successfully.
 
+Operational health is now explicit. `/health/live` verifies only that the API
+process can answer requests, while `/health/ready` also checks database
+connectivity. Readiness performs no writes, schema changes, or recovery actions.
+The CI uses readiness to wait for the real PostgreSQL-backed API before its smoke
+write, replacing the previous indirect OpenAPI check.
+
 ## Recent Adjustment
 
 Kept one DbContext for transactional simplicity, but moved EF Core mapping details
@@ -145,8 +152,7 @@ Checkout reservations now have an explicit lifecycle boundary:
 - No product update endpoint
 - No messaging
 - No caching
-- No observability
-- No explicit application or dependency health endpoints
+- No metrics, tracing, or structured observability backend
 - API and frontend are not containerized
 - No distributed architecture
 - No authentication-aware frontend flows
@@ -159,6 +165,6 @@ Checkout reservations now have an explicit lifecycle boundary:
 
 ## Next Step
 
-Add health checks that distinguish whether the application process is alive
-from whether it is ready to serve requests with PostgreSQL available. Protect
-their behavior with integration tests and expose a useful Docker health signal.
+Create the first controlled load-test baseline for the checkout flow. Define the
+workload, latency and error metrics, environment constraints, and correctness
+invariants before selecting performance targets or optimizing the application.

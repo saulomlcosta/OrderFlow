@@ -49,6 +49,20 @@ The credentials committed in `appsettings.Development.json` and `compose.yaml`
 are local-development defaults. Production credentials must come from a secret
 store or environment variables.
 
+## Health Checks
+
+With the API running, inspect its two operational signals:
+
+```powershell
+Invoke-WebRequest http://localhost:5216/health/live
+Invoke-WebRequest http://localhost:5216/health/ready
+```
+
+`/health/live` returns success when the application process can answer HTTP. It
+does not contact external dependencies. `/health/ready` returns success only
+when the application can also connect to its configured database. A running API
+therefore remains alive but becomes unready if PostgreSQL is unavailable.
+
 ## Tests
 
 Backend tests use isolated SQLite in-memory databases and do not require Docker:

@@ -1,4 +1,5 @@
 using OrderFlow.Api.Checkouts;
+using OrderFlow.Api.Health;
 using OrderFlow.Api.Inventory;
 using OrderFlow.Api.Orders;
 using OrderFlow.Api.Persistence;
@@ -9,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddPersistence(builder.Configuration);
+builder.Services.AddOrderFlowHealthChecks();
 builder.Services.AddProducts();
 builder.Services.AddInventory();
 builder.Services.AddCheckouts();
@@ -21,6 +23,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.MapOrderFlowHealthChecks();
 app.MapProducts();
 app.MapInventory();
 app.MapCheckouts();
