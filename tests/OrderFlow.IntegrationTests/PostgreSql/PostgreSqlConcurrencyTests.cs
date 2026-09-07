@@ -58,9 +58,14 @@ public sealed class PostgreSqlConcurrencyTests(PostgreSqlApiFactory factory)
         start.SetResult();
         var responses = await Task.WhenAll(requests);
         var product = await client.GetFromJsonAsync<ProductResponse>($"/products/{productId}");
+        var createdResponse = Assert.Single(
+            responses,
+            response => response.StatusCode == HttpStatusCode.Created);
+        var createdOrder = await createdResponse.Content.ReadFromJsonAsync<CreatedOrderResponse>();
 
-        Assert.Equal(1, responses.Count(response => response.StatusCode == HttpStatusCode.Created));
         Assert.Equal(9, responses.Count(response => response.StatusCode == HttpStatusCode.BadRequest));
+        Assert.NotNull(createdOrder);
+        Assert.Equal(checkout!.Id, createdOrder.CheckoutId);
         Assert.NotNull(product);
         Assert.Equal(0, product.StockQuantity);
         Assert.Equal(0, product.ReservedStockQuantity);
@@ -102,4 +107,6 @@ public sealed class PostgreSqlConcurrencyTests(PostgreSqlApiFactory factory)
             }
         });
     }
+
+    private sealed record CreatedOrderResponse(Guid Id, Guid CheckoutId);
 }

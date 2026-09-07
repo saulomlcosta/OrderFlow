@@ -2,6 +2,7 @@ namespace OrderFlow.Api.Orders;
 
 internal sealed record OrderResponse(
     Guid Id,
+    Guid? CheckoutId,
     DateTimeOffset CreatedAt,
     decimal Total,
     IReadOnlyCollection<OrderItemResponse> Items);

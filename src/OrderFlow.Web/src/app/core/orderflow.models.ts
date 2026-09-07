@@ -35,6 +35,7 @@ export interface OrderItemResponse {
 
 export interface OrderResponse {
   id: string;
+  checkoutId: string | null;
   createdAt: string;
   total: number;
   items: OrderItemResponse[];

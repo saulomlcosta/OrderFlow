@@ -27,6 +27,7 @@ internal static class GetOrderEndpoint
 
         var response = new OrderResponse(
             order.Id,
+            order.CheckoutId,
             order.CreatedAt,
             order.Total,
             order.Items

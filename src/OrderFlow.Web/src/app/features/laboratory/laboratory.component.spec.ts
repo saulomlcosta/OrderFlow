@@ -37,6 +37,7 @@ describe('LaboratoryComponent', () => {
 
   const order: OrderResponse = {
     id: 'order-1',
+    checkoutId: 'checkout-1',
     createdAt: '2026-09-04T12:05:00Z',
     total: 1000,
     items: [{

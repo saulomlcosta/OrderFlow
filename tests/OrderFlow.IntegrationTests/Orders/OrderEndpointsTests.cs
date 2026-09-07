@@ -83,6 +83,8 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory) : IntegrationTestB
         var order = await getOrderResponse.Content.ReadFromJsonAsync<OrderResponse>();
         var item = Assert.Single(order!.Items);
 
+        Assert.Equal(checkoutId, created!.CheckoutId);
+        Assert.Equal(checkoutId, order.CheckoutId);
         Assert.Equal(500m, item.UnitPrice);
         Assert.Equal("Monitor", item.ProductName);
         Assert.Equal(500m, order.Total);
@@ -241,5 +243,5 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory) : IntegrationTestB
 
         return await response.Content.ReadFromJsonAsync<ProductResponse>();
     }
-    private sealed record CreatedOrderResponse(Guid Id);
+    private sealed record CreatedOrderResponse(Guid Id, Guid CheckoutId);
 }

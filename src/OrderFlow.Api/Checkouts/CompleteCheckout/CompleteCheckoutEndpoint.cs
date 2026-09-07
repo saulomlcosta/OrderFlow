@@ -69,6 +69,7 @@ internal static class CompleteCheckoutEndpoint
             }
 
             var order = Order.Create(
+                checkout.Id,
                 checkout.Items.Select(item =>
                 {
                     var product = products[item.ProductId];

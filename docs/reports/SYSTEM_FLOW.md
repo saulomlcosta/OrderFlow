@@ -9,7 +9,7 @@ how the system behaves. Git history preserves each previous snapshot.
 
 | Field | Value |
 | --- | --- |
-| Recorded at | 2026-09-06 |
+| Recorded at | 2026-09-07 |
 | Project stage | V1 - Initial implementation |
 | Baseline commit | `27ea7be` |
 | Persistence | EF Core with PostgreSQL 18 for Development and SQLite in-memory for tests |
@@ -38,7 +38,7 @@ flowchart TD
 
     Action -->|Complete before expiration| ConfirmStock["Transaction<br/>Quantity -= quantity<br/>Reserved -= quantity"]
     ConfirmStock --> Completed["Checkout Completed"]
-    Completed --> Order["Order created<br/>name, price, and quantity preserved"]
+    Completed --> Order["Order created<br/>CheckoutId persisted<br/>name, price, and quantity preserved"]
     Order --> GetOrder["Get order<br/>GET /orders/{id}"]
 
     Action -->|Cancel before expiration| Cancel["ReservedQuantity -= quantity"]
@@ -79,6 +79,8 @@ flowchart TD
 - An overdue checkout is recognized as expired during reads, but inventory is
   released only after the administrator persists the `Expired` transition.
 - Order items preserve the product name and price read at completion time.
+- Every new order preserves the checkout that originated it; legacy orders may
+  have no `CheckoutId` because the relationship was introduced later.
 
 ## Architectural Boundaries
 
@@ -89,6 +91,9 @@ flowchart TD
 - PostgreSQL runs in Docker and stores Development data in a named volume.
 - EF Core migrations evolve the PostgreSQL schema and are applied at local
   Development startup.
+- A foreign key protects the Order-to-Checkout reference, and a filtered unique
+  index enforces the one-checkout-to-at-most-one-order invariant while retaining
+  compatibility with legacy orders.
 - SQLite in-memory remains a deliberate substitution for isolated integration
   and browser tests.
 - Unit, integration, Angular behavioral, and browser E2E tests protect the flow.
@@ -112,3 +117,4 @@ flowchart TD
 | 2026-09-06 | V1 baseline | Recorded the complete purchase, cancellation, and manual expiration flows. |
 | 2026-09-06 | Persistent Development | Added PostgreSQL, Docker volume, and EF Core migrations without changing business flows. |
 | 2026-09-06 | PostgreSQL concurrency | Verified reservation limits and single-order completion without changing business flows. |
+| 2026-09-07 | Schema evolution | Linked new orders to their originating checkout and validated forward and rollback migrations. |

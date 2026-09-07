@@ -37,6 +37,7 @@ backend flow rather than a full product experience.
 - List checkouts by lifecycle filter
 - Expire an overdue checkout and release reserved quantity
 - Complete a checkout into a final order
+- Trace a final order back to its originating checkout
 - Preserve product name and price in historical order items
 - Get an order
 - Exercise the full flow through a local Angular UI
@@ -99,8 +100,19 @@ frontend, and end-to-end.
 Two opt-in PostgreSQL integration tests now exercise the highest-risk concurrent
 writes against the real provider. Twenty simultaneous checkout requests against
 five units produce exactly five reservations, while ten simultaneous completion
-requests against one checkout produce exactly one order. The default local test
-run skips these two tests unless `ORDERFLOW_RUN_POSTGRESQL_TESTS=true` is set.
+requests against one checkout produce exactly one order linked to that checkout.
+The default local test run skips these two tests unless
+`ORDERFLOW_RUN_POSTGRESQL_TESTS=true` is set.
+
+The second EF Core migration links each new Order to the Checkout that originated
+it. The database foreign key prevents invalid references, and a filtered unique
+index enforces at most one order per checkout. The column remains nullable only
+for compatibility with orders created before this relationship existed; the
+domain requires the identifier for every new order.
+
+The migration was applied to the existing Development volume without losing its
+legacy order. Its `Down` path was exercised against the isolated test database,
+then the migration was applied again successfully.
 
 ## Recent Adjustment
 
@@ -134,6 +146,7 @@ Checkout reservations now have an explicit lifecycle boundary:
 - No messaging
 - No caching
 - No observability
+- No explicit application or dependency health endpoints
 - API and frontend are not containerized
 - No distributed architecture
 - No authentication-aware frontend flows
@@ -146,6 +159,6 @@ Checkout reservations now have an explicit lifecycle boundary:
 
 ## Next Step
 
-Introduce one small, business-justified schema change and generate a second EF
-Core migration. Apply it to the existing PostgreSQL volume without losing data,
-inspect the generated SQL, and practice both forward migration and rollback.
+Add health checks that distinguish whether the application process is alive
+from whether it is ready to serve requests with PostgreSQL available. Protect
+their behavior with integration tests and expose a useful Docker health signal.
