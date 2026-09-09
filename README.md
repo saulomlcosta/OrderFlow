@@ -135,6 +135,10 @@ API compatibility rules, observability requirements, expected workload and
 service-level objectives, and delivery guarantees for any future messaging.
 Those are recorded as gaps rather than silently filled with assumptions.
 
+Repository-wide working instructions for development agents are maintained in
+[`AGENTS.md`](AGENTS.md). They translate this architecture discovery into
+concrete reading order, invariants, validation steps, and decision boundaries.
+
 ## Prerequisites
 
 - .NET 10 SDK
@@ -225,6 +229,7 @@ npm run test:e2e
 
 ## Documentation
 
+- [Development agent guidance](AGENTS.md)
 - [Current state](docs/CURRENT_STATE.MD)
 - [System flow report](docs/reports/SYSTEM_FLOW.md)
 - [Engineering experiments](docs/experiments)
