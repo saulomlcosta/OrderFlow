@@ -1,0 +1,19 @@
+name: orderflow-load
+
+services:
+  postgres:
+    image: postgres:18.6-alpine
+    environment:
+      POSTGRES_DB: orderflow_load
+      POSTGRES_USER: orderflow
+      POSTGRES_PASSWORD: orderflow-load
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/18/docker
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orderflow -d orderflow_load"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+      start_period: 3s

@@ -6,7 +6,8 @@ V1 - Initial implementation
 
 ## Current Goal
 
-Validate the simplest end-to-end order flow before adding architectural complexity.
+Use the stable end-to-end checkout flow to investigate operational, performance,
+and security concerns without adding architectural complexity prematurely.
 
 The current business and architecture map is maintained in
 [`reports/SYSTEM_FLOW.md`](reports/SYSTEM_FLOW.md).
@@ -48,6 +49,7 @@ backend flow rather than a full product experience.
 - Validate the complete purchase journey through a real browser
 - Validate critical reservation and completion concurrency against PostgreSQL
 - Report process liveness and database-backed readiness through health endpoints
+- Execute an isolated, correctness-aware k6 baseline of the complete checkout journey
 
 ## Current Domain Concepts
 
@@ -121,6 +123,17 @@ connectivity. Readiness performs no writes, schema changes, or recovery actions.
 The CI uses readiness to wait for the real PostgreSQL-backed API before its smoke
 write, replacing the previous indirect OpenAPI check.
 
+`EXP-005 - Controlled Load-Test Baseline` now provides a reproducible local k6
+harness. It uses an ephemeral PostgreSQL database and temporary Release API, so
+load data never touches the persistent Development volume. The first run
+completed 100 of 100 journeys and 1,101 of 1,101 checks without HTTP failures.
+It observed about 65.45 journeys/s, 393.36 requests/s, 58.74 ms aggregate HTTP
+p95, and 937 ms complete-journey p95 on the documented workstation.
+
+These values are a single local observation, not an SLO. The short 1.5-second
+run showed a wide gap between median and p95 journey latency, so warm-up and
+run-to-run variance must be understood before optimization or CI thresholds.
+
 ## Recent Adjustment
 
 Kept one DbContext for transactional simplicity, but moved EF Core mapping details
@@ -157,6 +170,7 @@ Checkout reservations now have an explicit lifecycle boundary:
 - No distributed architecture
 - No authentication-aware frontend flows
 - No broader concurrency strategy beyond protected reservation and stock confirmation flows
+- No repeated steady-state load profile or production service-level objectives
 - No automatic reservation expiration worker
 - Stock reservation protects quantity only, not price
 - No payment processing
@@ -165,6 +179,6 @@ Checkout reservations now have an explicit lifecycle boundary:
 
 ## Next Step
 
-Create the first controlled load-test baseline for the checkout flow. Define the
-workload, latency and error metrics, environment constraints, and correctness
-invariants before selecting performance targets or optimizing the application.
+Begin authentication discovery. Define the user and trust boundaries, decide
+who issues identities and how the API validates them, and compare viable
+approaches before selecting an identity provider or changing application code.

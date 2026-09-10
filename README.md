@@ -227,6 +227,32 @@ npm test -- --watch=false --browsers=ChromeHeadless
 npm run test:e2e
 ```
 
+## Load Test Baseline
+
+The first performance experiment runs 100 complete checkout journeys across 10
+virtual users by default. It starts an isolated ephemeral PostgreSQL container
+on port `5433`, starts a temporary API on port `5217`, executes k6, and removes
+the test environment afterward. The API runs in `Release`; the harness never
+uses or cleans the Development database.
+
+With Docker Desktop running, execute:
+
+```powershell
+.\tests\OrderFlow.LoadTests\run.ps1
+```
+
+The workload can be changed explicitly for a new experiment:
+
+```powershell
+.\tests\OrderFlow.LoadTests\run.ps1 -VirtualUsers 20 -Iterations 500 -MaxDuration 5m
+```
+
+The initial script has correctness thresholds only: every request, check, and
+business journey must succeed. Reported latency percentiles and throughput are
+observations from the local environment, not service-level objectives. Load
+tests remain manual because noisy workstation results are not yet a useful CI
+quality gate.
+
 ## Documentation
 
 - [Development agent guidance](AGENTS.md)

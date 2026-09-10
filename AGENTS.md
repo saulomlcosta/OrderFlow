@@ -122,6 +122,15 @@ cd src/OrderFlow.Web
 npm run test:e2e
 ```
 
+Controlled local load baseline, with Docker Desktop running:
+
+```powershell
+.\tests\OrderFlow.LoadTests\run.ps1
+```
+
+Do not convert local latency observations into service-level objectives or CI
+thresholds without an explicit workload and environment decision.
+
 For documentation-only changes, at minimum verify Markdown structure, Mermaid
 blocks when changed, links, and `git diff --check`. CI remains the final clean
 Linux validation.

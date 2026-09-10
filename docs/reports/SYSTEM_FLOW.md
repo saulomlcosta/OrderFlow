@@ -9,12 +9,12 @@ how the system behaves. Git history preserves each previous snapshot.
 
 | Field | Value |
 | --- | --- |
-| Recorded at | 2026-09-07 |
+| Recorded at | 2026-09-10 |
 | Project stage | V1 - Initial implementation |
 | Baseline commit | `27ea7be` |
 | Persistence | EF Core with PostgreSQL 18 for Development and SQLite in-memory for tests |
 | User interfaces | Angular purchase laboratory and checkout administration |
-| Automation | Backend, PostgreSQL concurrency, frontend, and Playwright E2E checks in GitHub Actions |
+| Automation | GitHub Actions quality gates and a manual isolated k6 load baseline |
 
 ## Flow Diagram
 
@@ -71,6 +71,26 @@ flowchart TD
     Reads --> GetOrder
 ```
 
+## Load-Test Boundary
+
+The performance harness is isolated from the persistent Development environment.
+The runner owns every temporary resource and removes it after each execution.
+
+```mermaid
+flowchart LR
+    Engineer["Engineer"] --> Runner["PowerShell load-test runner"]
+
+    subgraph Isolated["Ephemeral load-test environment"]
+        Runner --> Api["OrderFlow API<br/>Release process<br/>localhost:5217"]
+        Runner --> K6["k6 v2.2.0<br/>Docker container"]
+        Runner --> LoadDb[("PostgreSQL 18<br/>tmpfs<br/>localhost:5433")]
+        K6 -->|"100 complete checkout journeys"| Api
+        Api -->|"EF Core / Npgsql"| LoadDb
+    end
+
+    DevelopmentDb[("Persistent Development database<br/>not accessed")]
+```
+
 ## Behavior Notes
 
 - `Quantity` represents physical stock.
@@ -105,6 +125,8 @@ flowchart TD
   under concurrent requests against the real provider.
 - Liveness reports whether the process answers HTTP without consulting external
   dependencies; readiness additionally verifies database connectivity.
+- The manual k6 harness measures a Release API against ephemeral PostgreSQL and
+  validates stock and Order invariants after every generated journey.
 
 ## Known Missing Flows
 
@@ -125,3 +147,4 @@ flowchart TD
 | 2026-09-06 | PostgreSQL concurrency | Verified reservation limits and single-order completion without changing business flows. |
 | 2026-09-07 | Schema evolution | Linked new orders to their originating checkout and validated forward and rollback migrations. |
 | 2026-09-07 | Operational health | Added separate process liveness and database readiness signals. |
+| 2026-09-10 | Load baseline | Measured 100 isolated checkout journeys while preserving business invariants. |
