@@ -11,9 +11,17 @@
     <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
       Laboratory
     </a>
-    <a routerLink="/admin/checkouts" routerLinkActive="active">
-      Checkout operations
-    </a>
+    @if (auth.isAdministrator()) {
+      <a routerLink="/admin/checkouts" routerLinkActive="active">
+        Checkout operations
+      </a>
+    }
+    @if (auth.authenticated()) {
+      <span class="identity">{{ auth.username() }}</span>
+      <button type="button" (click)="auth.logout()">Sign out</button>
+    } @else {
+      <button type="button" (click)="auth.login()">Sign in</button>
+    }
   </nav>
 </header>
 

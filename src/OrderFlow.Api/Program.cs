@@ -1,3 +1,4 @@
+using OrderFlow.Api.Authentication;
 using OrderFlow.Api.Checkouts;
 using OrderFlow.Api.Health;
 using OrderFlow.Api.Inventory;
@@ -9,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddOrderFlowAuthentication(builder.Configuration);
 builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddOrderFlowHealthChecks();
 builder.Services.AddProducts();
@@ -17,6 +19,9 @@ builder.Services.AddCheckouts();
 builder.Services.AddOrders();
 
 var app = builder.Build();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {

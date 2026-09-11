@@ -8,9 +8,9 @@ problems instead of anticipated complexity.
 ### Natural-language description
 
 OrderFlow is a learning-oriented order and stock-reservation system. A customer
-uses an Angular web application to create products for the laboratory, add
-stock, reserve product quantities by starting a checkout, and complete that
-checkout as an order. An administrative view lists checkout states and allows
+uses an Angular web application to exercise the purchase journey, reserve
+product quantities by starting a checkout, and complete that checkout as an
+order. An authenticated administrative view lists checkout states and allows
 overdue reservations to be explicitly expired so their stock is released.
 
 The current architecture is a modular monolith. One ASP.NET Core Minimal API
@@ -19,9 +19,11 @@ coordinates them through one EF Core DbContext and database transaction when a
 workflow crosses boundaries. PostgreSQL is the durable Development store.
 SQLite in-memory is a deliberate test substitution, not a production container.
 
-There are currently no external business integrations. Payment, messaging,
-automatic expiration, authentication, and authorization are outside the
-implemented scope.
+Keycloak is the first external platform integration. It issues OpenID Connect
+identities for the Angular SPA, and the API validates its JWT access tokens.
+The first security slice protects checkout administration; customer ownership
+remains outside the implemented scope. There are no external business
+integrations such as payment or messaging.
 
 ### Discovery frame
 
@@ -29,11 +31,11 @@ implemented scope.
 | --- | --- |
 | Scope | The implemented purchase, reservation, cancellation, manual expiration, order-query, and operational-health flows. |
 | Structural view | C4-inspired container level. Source-code modules, classes, and endpoints are intentionally omitted. |
-| System boundary | The Angular SPA, ASP.NET Core API, and PostgreSQL database belong to OrderFlow. |
-| Responsibilities | Angular provides customer and administrative interactions; the API enforces workflows and domain rules; PostgreSQL persists products, inventory, checkouts, and orders. |
-| Integrations | Angular calls the API synchronously over HTTP/JSON; the API accesses PostgreSQL through EF Core and Npgsql. No external business system is integrated. |
+| System boundary | The Angular SPA, ASP.NET Core API, and business PostgreSQL database belong to OrderFlow. Keycloak is the trusted identity provider. |
+| Responsibilities | Angular provides customer and authenticated administrative interactions; the API validates tokens and enforces workflows, authorization, and domain rules; PostgreSQL persists business data; Keycloak authenticates users and issues identities. |
+| Integrations | Angular uses OpenID Connect Authorization Code with PKCE against Keycloak and calls the API over HTTP/JSON; the API validates JWTs and accesses PostgreSQL through EF Core and Npgsql. |
 | Constraints | Keep one deployable backend and one DbContext until a demonstrated problem justifies separation. Never allow reserved stock to exceed physical stock. Complete checkout, consume reserved stock, and create the order atomically. |
-| Known gaps | Identity, roles, payments, automatic reservation expiration, production deployment, observability, performance targets, and asynchronous communication remain undecided or unimplemented. |
+| Known gaps | Customer ownership, production identity hardening, payments, automatic reservation expiration, production deployment, observability, performance targets, and asynchronous communication remain undecided or unimplemented. |
 
 ### Structural diagram - C4-inspired container view
 
@@ -56,8 +58,13 @@ flowchart LR
         Api -->|"EF Core / Npgsql"| Database
     end
 
+    Identity["Keycloak 26<br/>OpenID Connect identity provider"]
+
     Customer -->|"Runs the purchase journey"| Web
     Administrator -->|"Operates reservation lifecycle"| Web
+    Web -->|"Authorization Code + PKCE"| Identity
+    Identity -->|"JWT access token"| Web
+    Api -.->|"Validates trusted token"| Identity
 ```
 
 ### Behavioral diagram - reserve and complete checkout
@@ -129,7 +136,7 @@ sequence was aligned with the implementation so product name and price are read
 at completion and preserved in the final Order.
 
 For an agent to extend OrderFlow without inventing decisions, the documentation
-would still need explicit identity and RBAC policies, payment semantics, an
+would still need customer ownership policies, payment semantics, an
 automatic-expiration ownership model, production topology and migration policy,
 API compatibility rules, observability requirements, expected workload and
 service-level objectives, and delivery guarantees for any future messaging.
@@ -147,10 +154,10 @@ concrete reading order, invariants, validation steps, and decision boundaries.
 
 ## Run Locally
 
-Start the persistent PostgreSQL database:
+Start the business database, Keycloak, and its identity database:
 
 ```powershell
-docker compose up -d postgres
+docker compose up -d
 ```
 
 Start the API in one terminal. The API applies pending migrations in the
@@ -167,6 +174,16 @@ cd src/OrderFlow.Web
 npm install
 npm start
 ```
+
+The imported Development realm provides two local demonstration accounts:
+
+| Username | Password | Realm role |
+| --- | --- | --- |
+| `customer` | `customer` | `customer` |
+| `administrator` | `administrator` | `administrator` |
+
+These credentials, Keycloak `start-dev`, and HTTP endpoints are local defaults,
+not a production identity configuration.
 
 The PostgreSQL volume survives API and container restarts. Stop the environment
 without deleting its data:

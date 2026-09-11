@@ -60,6 +60,26 @@ nav a {
   font-size: 0.9rem;
 }
 
+nav button,
+.identity {
+  border: 0;
+  padding: 0.65rem 0.9rem;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+nav button {
+  color: white;
+  background: var(--accent-dark);
+  cursor: pointer;
+}
+
+.identity {
+  color: var(--muted);
+}
+
 nav a.active {
   color: white;
   background: var(--ink);

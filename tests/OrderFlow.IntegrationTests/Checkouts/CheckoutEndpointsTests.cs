@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using OrderFlow.Api.Checkouts;
 using OrderFlow.Api.Products;
@@ -10,7 +11,14 @@ namespace OrderFlow.IntegrationTests.Checkouts;
 public class CheckoutEndpointsTests(OrderFlowApiFactory factory) : IntegrationTestBase(factory)
 {
     private readonly OrderFlowApiFactory _factory = factory;
-    private readonly HttpClient _client = factory.CreateClient();
+    private readonly HttpClient _client = CreateAdministratorClient(factory);
+
+    private static HttpClient CreateAdministratorClient(OrderFlowApiFactory factory)
+    {
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Test");
+        return client;
+    }
 
     [Fact]
     public async Task StartCheckout_WithEnoughStock_ReservesQuantity()

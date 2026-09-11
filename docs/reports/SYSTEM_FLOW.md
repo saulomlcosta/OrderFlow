@@ -13,7 +13,8 @@ how the system behaves. Git history preserves each previous snapshot.
 | Project stage | V1 - Initial implementation |
 | Baseline commit | `27ea7be` |
 | Persistence | EF Core with PostgreSQL 18 for Development and SQLite in-memory for tests |
-| User interfaces | Angular purchase laboratory and checkout administration |
+| User interfaces | Angular purchase laboratory and authenticated checkout administration |
+| Identity | Keycloak 26.7.3 with a versioned Development realm and PostgreSQL store |
 | Automation | GitHub Actions quality gates and a manual isolated k6 load baseline |
 
 ## Flow Diagram
@@ -45,7 +46,7 @@ flowchart TD
     Cancel --> Cancelled["Checkout Cancelled"]
 
     Action -->|Time elapses| OperationalExpired["Persisted as Active<br/>Listed operationally as expired"]
-    Admin["Administrator<br/>Angular /admin/checkouts"] --> List["List lifecycle queues<br/>GET /checkouts?status=..."]
+    Admin["Authenticated administrator<br/>Angular /admin/checkouts"] --> List["List lifecycle queues<br/>GET /checkouts?status=..."]
     List --> OperationalExpired
     Admin --> Expire["Expire manually<br/>POST /checkouts/{id}/expire"]
     OperationalExpired --> Expire
@@ -64,6 +65,11 @@ flowchart TD
     Monitor["CI / future orchestrator"] --> Live["Liveness<br/>GET /health/live<br/>process only"]
     Monitor --> Ready["Readiness<br/>GET /health/ready"]
     Ready --> Db
+
+    Identity["Keycloak<br/>OIDC identities and roles"] --> Admin
+    Admin -->|"Authorization Code + PKCE"| Identity
+    List -.->|"JWT administrator policy"| Identity
+    Expire -.->|"JWT administrator policy"| Identity
 
     User --> Reads["Available queries"]
     Reads --> GetProduct["GET /products/{id}"]
@@ -109,6 +115,13 @@ flowchart LR
 ## Architectural Boundaries
 
 - Angular provides the customer laboratory and administrative operations.
+- Keycloak authenticates Development users and issues JWT access tokens through
+  Authorization Code with PKCE; its data is isolated in a dedicated PostgreSQL
+  database.
+- The API validates issuer, audience, signature, lifetime, and the
+  `administrator` role for checkout listing and manual expiration.
+- Angular route guards improve navigation but are not the authorization
+  boundary; server-side policies protect administrative data and commands.
 - ASP.NET Core exposes feature-oriented Minimal API endpoints.
 - Products, Inventory, Checkouts, and Orders are logical modules in one process.
 - One EF Core DbContext and database transaction coordinate cross-module writes.
@@ -130,7 +143,8 @@ flowchart LR
 
 ## Known Missing Flows
 
-- Authentication and authorization
+- Customer resource ownership and authenticated customer operations
+- Administrative protection for product and inventory commands
 - Automatic reservation expiration
 - Payment processing
 - Product maintenance beyond creation
@@ -148,3 +162,4 @@ flowchart LR
 | 2026-09-07 | Schema evolution | Linked new orders to their originating checkout and validated forward and rollback migrations. |
 | 2026-09-07 | Operational health | Added separate process liveness and database readiness signals. |
 | 2026-09-10 | Load baseline | Measured 100 isolated checkout journeys while preserving business invariants. |
+| 2026-09-10 | Authentication boundary | Added Keycloak OIDC and protected checkout administration by role. |

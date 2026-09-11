@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using OrderFlow.Api.Authentication;
 using OrderFlow.Api.Common;
 using OrderFlow.Api.Persistence;
 
@@ -8,7 +9,8 @@ internal static class ExpireCheckoutEndpoint
 {
     internal static void MapExpireCheckout(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/checkouts/{id:guid}/expire", HandleAsync);
+        app.MapPost("/checkouts/{id:guid}/expire", HandleAsync)
+            .RequireAuthorization(OrderFlowPolicies.Administrator);
     }
 
     private static async Task<IResult> HandleAsync(

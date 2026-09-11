@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using OrderFlow.Api.Authentication;
 using OrderFlow.Api.Common;
 using OrderFlow.Api.Persistence;
 
@@ -8,7 +9,8 @@ internal static class ListCheckoutsEndpoint
 {
     internal static void MapListCheckouts(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/checkouts", HandleAsync);
+        app.MapGet("/checkouts", HandleAsync)
+            .RequireAuthorization(OrderFlowPolicies.Administrator);
     }
 
     private static async Task<IResult> HandleAsync(

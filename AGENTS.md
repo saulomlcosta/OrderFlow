@@ -43,8 +43,11 @@ decision, and evidence.
   not proof of PostgreSQL-specific concurrency behavior.
 - The frontend is one Angular 18+ application written in TypeScript.
 - Communication between Angular and the API is synchronous HTTP/JSON.
-- There is no payment provider, message broker, cart, authentication, or
-  authorization yet.
+- Keycloak is the Development identity provider. Angular uses Authorization
+  Code with PKCE, and the API validates JWT bearer tokens.
+- Checkout listing and manual expiration require the `administrator` role.
+  Customer operations remain anonymous until resource ownership is implemented.
+- There is no payment provider, message broker, or cart yet.
 
 Do not add repositories, generic abstractions, CQRS, MediatR, new DbContexts,
 queues, services, or deployment units merely because they may be useful later.
@@ -149,8 +152,8 @@ Linux validation.
 
 Do not choose these on behalf of the project without a task-specific decision:
 
-- authentication and identity provider
-- authorization and role model
+- customer ownership and whether customer operations require authentication
+- production identity hardening and Keycloak deployment topology
 - payment workflow and failure semantics
 - automatic reservation expiration ownership
 - production hosting and deployment topology

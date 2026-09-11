@@ -18,5 +18,39 @@ services:
       retries: 10
       start_period: 5s
 
+  keycloak-postgres:
+    image: postgres:18.6-alpine
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak-dev
+    volumes:
+      - orderflow-keycloak-postgres-data:/var/lib/postgresql/18/docker
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.3
+    command: start-dev --import-realm
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak-dev
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./infra/keycloak/orderflow-realm.json:/opt/keycloak/data/import/orderflow-realm.json:ro
+    depends_on:
+      keycloak-postgres:
+        condition: service_healthy
+
 volumes:
   orderflow-postgres-data:
+  orderflow-keycloak-postgres-data:

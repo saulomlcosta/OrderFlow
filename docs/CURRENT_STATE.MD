@@ -50,6 +50,9 @@ backend flow rather than a full product experience.
 - Validate critical reservation and completion concurrency against PostgreSQL
 - Report process liveness and database-backed readiness through health endpoints
 - Execute an isolated, correctness-aware k6 baseline of the complete checkout journey
+- Authenticate Angular users through Keycloak with Authorization Code and PKCE
+- Validate Keycloak JWT access tokens in the API
+- Restrict checkout listing and manual expiration to administrators
 
 ## Current Domain Concepts
 
@@ -134,6 +137,17 @@ These values are a single local observation, not an SLO. The short 1.5-second
 run showed a wide gap between median and p95 journey latency, so warm-up and
 run-to-run variance must be understood before optimization or CI thresholds.
 
+`EXP-006 - Keycloak Authentication Boundary` selected an external OpenID
+Connect provider over an application-owned credential store. Keycloak runs with
+its own PostgreSQL database, imports a versioned Development realm, and issues
+tokens for the Angular public client with the OrderFlow API as audience.
+
+Angular keeps tokens in memory, renews them before API calls, and guards the
+administrative route. The API remains the security authority: anonymous callers
+receive `401` from checkout administration, and authenticated non-administrators
+receive `403`. The remaining customer endpoints are intentionally anonymous
+until Checkout and Order can be associated with the authenticated subject.
+
 ## Recent Adjustment
 
 Kept one DbContext for transactional simplicity, but moved EF Core mapping details
@@ -160,15 +174,15 @@ Checkout reservations now have an explicit lifecycle boundary:
 
 ## Known Limitations
 
-- No authentication
-- No authorization
+- No customer resource ownership
+- Product creation and stock addition are not yet restricted to administrators
 - No product update endpoint
 - No messaging
 - No caching
 - No metrics, tracing, or structured observability backend
 - API and frontend are not containerized
 - No distributed architecture
-- No authentication-aware frontend flows
+- No authenticated customer history or account area
 - No broader concurrency strategy beyond protected reservation and stock confirmation flows
 - No repeated steady-state load profile or production service-level objectives
 - No automatic reservation expiration worker
@@ -179,6 +193,7 @@ Checkout reservations now have an explicit lifecycle boundary:
 
 ## Next Step
 
-Begin authentication discovery. Define the user and trust boundaries, decide
-who issues identities and how the API validates them, and compare viable
-approaches before selecting an identity provider or changing application code.
+Turn the laboratory root into a customer-oriented catalog while moving product
+creation and stock operations to `/admin/products`. Then associate Checkout and
+Order with the authenticated Keycloak subject before protecting customer
+operations.

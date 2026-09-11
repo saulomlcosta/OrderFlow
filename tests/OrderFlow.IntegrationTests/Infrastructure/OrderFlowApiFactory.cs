@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
@@ -26,6 +27,14 @@ public sealed class OrderFlowApiFactory : WebApplicationFactory<Program>, IAsync
             services.RemoveAll<SqliteConnection>();
             services.RemoveAll<DbContextOptions<OrderFlowDbContext>>();
             services.RemoveAll<OrderFlowDbContext>();
+            services.AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = TestAuthenticationHandler.AuthenticationScheme;
+                    options.DefaultChallengeScheme = TestAuthenticationHandler.AuthenticationScheme;
+                })
+                .AddScheme<AuthenticationSchemeOptions, TestAuthenticationHandler>(
+                    TestAuthenticationHandler.AuthenticationScheme,
+                    _ => { });
             services.AddSingleton(_connection);
             services.AddDbContext<OrderFlowDbContext>(options =>
                 options.UseSqlite(_connection.ConnectionString));
