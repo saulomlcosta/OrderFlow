@@ -68,10 +68,7 @@ jobs:
             exit 1
           fi
 
-          curl --fail \
-            --header "Content-Type: application/json" \
-            --data '{"name":"CI PostgreSQL Product","price":10.00}' \
-            http://localhost:5216/products > /dev/null
+          curl --fail http://localhost:5216/products > /dev/null
 
   frontend:
     name: Frontend
@@ -132,8 +129,20 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
+      - name: Start identity provider
+        working-directory: .
+        run: |
+          docker compose up -d keycloak
+          curl --fail --retry 60 --retry-connrefused --retry-delay 2 \
+            http://localhost:8080/realms/orderflow/.well-known/openid-configuration > /dev/null
+
       - name: Test purchase journey
         run: npm run test:e2e
+
+      - name: Stop identity provider
+        if: always()
+        working-directory: .
+        run: docker compose down --remove-orphans
 
       - name: Upload failure diagnostics
         if: failure()

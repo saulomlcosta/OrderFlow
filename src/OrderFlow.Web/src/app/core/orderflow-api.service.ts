@@ -14,6 +14,10 @@ import {
 export class OrderflowApiService {
   private readonly http = inject(HttpClient);
 
+  listProducts() {
+    return this.http.get<ProductResponse[]>('/products');
+  }
+
   createProduct(payload: { name: string; price: number }) {
     return this.http.post<ProductResponse>('/products', payload);
   }

@@ -3,6 +3,7 @@ import { check } from 'k6';
 import { Rate, Trend } from 'k6/metrics';
 
 const baseUrl = __ENV.BASE_URL || 'http://host.docker.internal:5217';
+const identityUrl = __ENV.IDENTITY_URL || 'http://host.docker.internal:8081';
 const virtualUsers = Number.parseInt(__ENV.VUS || '10', 10);
 const iterations = Number.parseInt(__ENV.ITERATIONS || '100', 10);
 const maxDuration = __ENV.MAX_DURATION || '2m';
@@ -28,8 +29,11 @@ export const options = {
   },
 };
 
-const jsonRequest = (name) => ({
-  headers: { 'Content-Type': 'application/json' },
+const jsonRequest = (name, token) => ({
+  headers: {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  },
   tags: { name },
 });
 
@@ -55,7 +59,21 @@ export function setup() {
     throw new Error(`OrderFlow is not ready at ${baseUrl}.`);
   }
 
-  return { runId: `${Date.now()}` };
+  const tokenResponse = http.post(
+    `${identityUrl}/realms/orderflow/protocol/openid-connect/token`,
+    {
+      grant_type: 'client_credentials',
+      client_id: __ENV.CLIENT_ID,
+      client_secret: __ENV.CLIENT_SECRET,
+    },
+    namedRequest('POST Keycloak token'),
+  );
+
+  if (!hasStatus(tokenResponse, 200, 'automation authentication')) {
+    throw new Error('Keycloak did not issue an automation access token.');
+  }
+
+  return { runId: `${Date.now()}`, accessToken: tokenResponse.json('access_token') };
 }
 
 export default function (data) {
@@ -67,7 +85,7 @@ export default function (data) {
     const createProductResponse = http.post(
       `${baseUrl}/products`,
       JSON.stringify({ name: productName, price: 100 }),
-      jsonRequest('POST /products'),
+      jsonRequest('POST /products', data.accessToken),
     );
 
     if (!hasStatus(createProductResponse, 201, 'create product')) {
@@ -82,7 +100,7 @@ export default function (data) {
     const addStockResponse = http.post(
       `${baseUrl}/products/${product.id}/stock`,
       JSON.stringify({ quantity: 1 }),
-      jsonRequest('POST /products/{id}/stock'),
+      jsonRequest('POST /products/{id}/stock', data.accessToken),
     );
 
     if (!hasStatus(addStockResponse, 200, 'add stock')) {

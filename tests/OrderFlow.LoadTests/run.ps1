@@ -25,6 +25,8 @@ $succeeded = $false
 $environmentNames = @(
     'ASPNETCORE_ENVIRONMENT',
     'ASPNETCORE_URLS',
+    'Authentication__Authority',
+    'Authentication__RequireHttpsMetadata',
     'ConnectionStrings__OrderFlow',
     'Persistence__InitializeOnStartup',
     'Persistence__Provider'
@@ -41,8 +43,32 @@ try {
         throw 'The isolated PostgreSQL load-test container did not start.'
     }
 
+    $identityReady = $false
+    for ($attempt = 1; $attempt -le 90; $attempt++) {
+        try {
+            $response = Invoke-WebRequest `
+                -UseBasicParsing `
+                -Uri 'http://localhost:8081/realms/orderflow/.well-known/openid-configuration' `
+                -TimeoutSec 2
+
+            if ($response.StatusCode -eq 200) {
+                $identityReady = $true
+                break
+            }
+        }
+        catch {
+            Start-Sleep -Seconds 1
+        }
+    }
+
+    if (!$identityReady) {
+        throw 'The isolated Keycloak identity provider did not become ready.'
+    }
+
     [Environment]::SetEnvironmentVariable('ASPNETCORE_ENVIRONMENT', 'Development', 'Process')
     [Environment]::SetEnvironmentVariable('ASPNETCORE_URLS', 'http://localhost:5217', 'Process')
+    [Environment]::SetEnvironmentVariable('Authentication__Authority', 'http://localhost:8081/realms/orderflow', 'Process')
+    [Environment]::SetEnvironmentVariable('Authentication__RequireHttpsMetadata', 'false', 'Process')
     [Environment]::SetEnvironmentVariable(
         'ConnectionStrings__OrderFlow',
         'Host=localhost;Port=5433;Database=orderflow_load;Username=orderflow;Password=orderflow-load',
@@ -110,6 +136,9 @@ try {
         --rm `
         --add-host 'host.docker.internal:host-gateway' `
         --env 'BASE_URL=http://host.docker.internal:5217' `
+        --env 'IDENTITY_URL=http://host.docker.internal:8081' `
+        --env 'CLIENT_ID=orderflow-automation' `
+        --env 'CLIENT_SECRET=orderflow-automation-local' `
         --env "VUS=$VirtualUsers" `
         --env "ITERATIONS=$Iterations" `
         --env "MAX_DURATION=$MaxDuration" `

@@ -24,6 +24,7 @@ public sealed class PostgreSqlApiFactory : WebApplicationFactory<Program>, IAsyn
         builder.UseSetting("Persistence:Provider", "PostgreSql");
         builder.UseSetting("Persistence:InitializeOnStartup", "true");
         builder.UseSetting("ConnectionStrings:OrderFlow", GetConnectionString());
+        builder.ConfigureServices(services => services.AddTestAuthentication());
     }
 
     public async Task InitializeAsync()
@@ -72,6 +73,8 @@ public sealed class PostgreSqlApiFactory : WebApplicationFactory<Program>, IAsyn
         var dbContext = scope.ServiceProvider.GetRequiredService<OrderFlowDbContext>();
         return await dbContext.Orders.CountAsync();
     }
+
+    internal HttpClient CreateAdministratorClient() => CreateClient().AsAdministrator();
 
     private static string GetConnectionString() =>
         Environment.GetEnvironmentVariable("ORDERFLOW_POSTGRESQL_CONNECTION_STRING")

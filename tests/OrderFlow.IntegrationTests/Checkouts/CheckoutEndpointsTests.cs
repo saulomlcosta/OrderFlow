@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using OrderFlow.Api.Checkouts;
 using OrderFlow.Api.Products;
@@ -11,14 +10,8 @@ namespace OrderFlow.IntegrationTests.Checkouts;
 public class CheckoutEndpointsTests(OrderFlowApiFactory factory) : IntegrationTestBase(factory)
 {
     private readonly OrderFlowApiFactory _factory = factory;
-    private readonly HttpClient _client = CreateAdministratorClient(factory);
-
-    private static HttpClient CreateAdministratorClient(OrderFlowApiFactory factory)
-    {
-        var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Test");
-        return client;
-    }
+    private readonly HttpClient _client = factory.CreateClient();
+    private readonly HttpClient _administratorClient = factory.CreateAdministratorClient();
 
     [Fact]
     public async Task StartCheckout_WithEnoughStock_ReservesQuantity()
@@ -149,7 +142,7 @@ public class CheckoutEndpointsTests(OrderFlowApiFactory factory) : IntegrationTe
         var checkoutId = await StartCheckoutAsync(productId, 2);
         _factory.AdvanceTime(TimeSpan.FromMinutes(16));
 
-        var response = await _client.PostAsync($"/checkouts/{checkoutId}/expire", content: null);
+        var response = await _administratorClient.PostAsync($"/checkouts/{checkoutId}/expire", content: null);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -172,7 +165,7 @@ public class CheckoutEndpointsTests(OrderFlowApiFactory factory) : IntegrationTe
         await AddStockAsync(productId, 3);
         var checkoutId = await StartCheckoutAsync(productId, 2);
 
-        var response = await _client.PostAsync($"/checkouts/{checkoutId}/expire", content: null);
+        var response = await _administratorClient.PostAsync($"/checkouts/{checkoutId}/expire", content: null);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
@@ -192,10 +185,10 @@ public class CheckoutEndpointsTests(OrderFlowApiFactory factory) : IntegrationTe
         await StartCheckoutAsync(productId, 1);
         _factory.AdvanceTime(TimeSpan.FromMinutes(16));
 
-        var firstResponse = await _client.PostAsync(
+        var firstResponse = await _administratorClient.PostAsync(
             $"/checkouts/{firstCheckoutId}/expire",
             content: null);
-        var repeatedResponse = await _client.PostAsync(
+        var repeatedResponse = await _administratorClient.PostAsync(
             $"/checkouts/{firstCheckoutId}/expire",
             content: null);
 
@@ -217,7 +210,7 @@ public class CheckoutEndpointsTests(OrderFlowApiFactory factory) : IntegrationTe
         var checkoutId = await StartCheckoutAsync(productId, 1);
         _factory.AdvanceTime(TimeSpan.FromMinutes(16));
 
-        var response = await _client.GetAsync("/checkouts?status=expired");
+        var response = await _administratorClient.GetAsync("/checkouts?status=expired");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -232,7 +225,7 @@ public class CheckoutEndpointsTests(OrderFlowApiFactory factory) : IntegrationTe
 
     private async Task<Guid> CreateProductAsync(string name, decimal price)
     {
-        var response = await _client.PostAsJsonAsync("/products", new
+        var response = await _administratorClient.PostAsJsonAsync("/products", new
         {
             Name = name,
             Price = price
@@ -246,7 +239,7 @@ public class CheckoutEndpointsTests(OrderFlowApiFactory factory) : IntegrationTe
 
     private async Task AddStockAsync(Guid productId, int quantity)
     {
-        var response = await _client.PostAsJsonAsync($"/products/{productId}/stock", new
+        var response = await _administratorClient.PostAsJsonAsync($"/products/{productId}/stock", new
         {
             Quantity = quantity
         });

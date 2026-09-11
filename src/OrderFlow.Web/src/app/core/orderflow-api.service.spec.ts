@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { OrderflowApiService } from './orderflow-api.service';
-import { CheckoutResponse } from './orderflow.models';
+import { CheckoutResponse, ProductResponse } from './orderflow.models';
 
 describe('OrderflowApiService', () => {
   let service: OrderflowApiService;
@@ -28,6 +28,23 @@ describe('OrderflowApiService', () => {
   });
 
   afterEach(() => http.verify());
+
+  it('should list products for the public catalog', () => {
+    const product: ProductResponse = {
+      id: 'product-1',
+      name: 'Mechanical Keyboard',
+      price: 500,
+      stockQuantity: 10,
+      reservedStockQuantity: 0,
+      availableStockQuantity: 10
+    };
+
+    service.listProducts().subscribe(products => expect(products).toEqual([product]));
+
+    const request = http.expectOne('/products');
+    expect(request.request.method).toBe('GET');
+    request.flush([product]);
+  });
 
   it('should list checkouts using the lifecycle filter', () => {
     service.listCheckouts('expired').subscribe(checkouts => {

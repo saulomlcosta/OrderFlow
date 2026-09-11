@@ -8,10 +8,10 @@ problems instead of anticipated complexity.
 ### Natural-language description
 
 OrderFlow is a learning-oriented order and stock-reservation system. A customer
-uses an Angular web application to exercise the purchase journey, reserve
-product quantities by starting a checkout, and complete that checkout as an
-order. An authenticated administrative view lists checkout states and allows
-overdue reservations to be explicitly expired so their stock is released.
+uses an Angular storefront to browse products, reserve quantities by starting a
+checkout, and complete that checkout as an order. Authenticated administrative
+views provision products and stock, list checkout states, and explicitly expire
+overdue reservations so their stock is released.
 
 The current architecture is a modular monolith. One ASP.NET Core Minimal API
 contains the logical Products, Inventory, Checkouts, and Orders boundaries and
@@ -29,10 +29,10 @@ integrations such as payment or messaging.
 
 | Concern | Current decision |
 | --- | --- |
-| Scope | The implemented purchase, reservation, cancellation, manual expiration, order-query, and operational-health flows. |
+| Scope | The implemented catalog provisioning, purchase, reservation, cancellation, manual expiration, order-query, and operational-health flows. |
 | Structural view | C4-inspired container level. Source-code modules, classes, and endpoints are intentionally omitted. |
 | System boundary | The Angular SPA, ASP.NET Core API, and business PostgreSQL database belong to OrderFlow. Keycloak is the trusted identity provider. |
-| Responsibilities | Angular provides customer and authenticated administrative interactions; the API validates tokens and enforces workflows, authorization, and domain rules; PostgreSQL persists business data; Keycloak authenticates users and issues identities. |
+| Responsibilities | Angular provides a public storefront and authenticated administrative workspaces; the API validates tokens and enforces workflows, authorization, and domain rules; PostgreSQL persists business data; Keycloak authenticates users and technical clients. |
 | Integrations | Angular uses OpenID Connect Authorization Code with PKCE against Keycloak and calls the API over HTTP/JSON; the API validates JWTs and accesses PostgreSQL through EF Core and Npgsql. |
 | Constraints | Keep one deployable backend and one DbContext until a demonstrated problem justifies separation. Never allow reserved stock to exceed physical stock. Complete checkout, consume reserved stock, and create the order atomically. |
 | Known gaps | Customer ownership, production identity hardening, payments, automatic reservation expiration, production deployment, observability, performance targets, and asynchronous communication remain undecided or unimplemented. |
@@ -50,7 +50,7 @@ flowchart LR
 
     subgraph OrderFlow["OrderFlow system"]
         direction LR
-        Web["Angular 18 SPA<br/>TypeScript<br/>Customer laboratory and checkout administration"]
+        Web["Angular 18 SPA<br/>TypeScript<br/>Storefront and administration"]
         Api["ASP.NET Core Minimal API<br/>.NET 10<br/>Business workflows and domain rules"]
         Database[("PostgreSQL 18<br/>Products, inventory, checkouts, and orders")]
 
@@ -61,7 +61,7 @@ flowchart LR
     Identity["Keycloak 26<br/>OpenID Connect identity provider"]
 
     Customer -->|"Runs the purchase journey"| Web
-    Administrator -->|"Operates reservation lifecycle"| Web
+    Administrator -->|"Provisions catalog and operates reservations"| Web
     Web -->|"Authorization Code + PKCE"| Identity
     Identity -->|"JWT access token"| Web
     Api -.->|"Validates trusted token"| Identity
@@ -185,6 +185,13 @@ The imported Development realm provides two local demonstration accounts:
 These credentials, Keycloak `start-dev`, and HTTP endpoints are local defaults,
 not a production identity configuration.
 
+The realm also contains the confidential `orderflow-automation` client used by
+the HTTP file and isolated k6 harness. Human users never receive its secret:
+they authenticate through Authorization Code with PKCE, while this non-browser
+client uses Client Credentials. All committed credentials are Development-only.
+Keycloak imports realm changes only into a new identity database; an older local
+volume must be deliberately recreated before newly added realm clients appear.
+
 The PostgreSQL volume survives API and container restarts. Stop the environment
 without deleting its data:
 
@@ -236,21 +243,28 @@ Remove-Item Env:ORDERFLOW_RUN_POSTGRESQL_TESTS
 These tests create and truncate a separate `orderflow_tests` database. They do
 not clean or modify the `orderflow` Development database.
 
-Frontend behavioral and browser tests also remain self-contained:
+Frontend behavioral tests remain self-contained:
 
 ```powershell
 cd src/OrderFlow.Web
 npm test -- --watch=false --browsers=ChromeHeadless
+```
+
+The browser journey uses the real local Keycloak login, so start the identity
+provider before running it:
+
+```powershell
+docker compose up -d keycloak
 npm run test:e2e
 ```
 
 ## Load Test Baseline
 
 The first performance experiment runs 100 complete checkout journeys across 10
-virtual users by default. It starts an isolated ephemeral PostgreSQL container
-on port `5433`, starts a temporary API on port `5217`, executes k6, and removes
-the test environment afterward. The API runs in `Release`; the harness never
-uses or cleans the Development database.
+virtual users by default. It starts isolated ephemeral PostgreSQL and Keycloak
+containers, starts a temporary API on port `5217`, authenticates through Client
+Credentials, executes k6, and removes the test environment afterward. The API
+runs in `Release`; the harness never uses or cleans Development data.
 
 With Docker Desktop running, execute:
 

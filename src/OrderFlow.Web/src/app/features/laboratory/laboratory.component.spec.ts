@@ -10,18 +10,17 @@ describe('LaboratoryComponent', () => {
   let fixture: ComponentFixture<LaboratoryComponent>;
   let api: jasmine.SpyObj<OrderflowApiService>;
 
-  const createdProduct: ProductResponse = {
+  const product: ProductResponse = {
     id: 'product-1',
     name: 'Mechanical Keyboard',
     price: 500,
-    stockQuantity: 0,
+    stockQuantity: 10,
     reservedStockQuantity: 0,
-    availableStockQuantity: 0
+    availableStockQuantity: 10
   };
 
   const reservedProduct: ProductResponse = {
-    ...createdProduct,
-    stockQuantity: 10,
+    ...product,
     reservedStockQuantity: 2,
     availableStockQuantity: 8
   };
@@ -32,32 +31,27 @@ describe('LaboratoryComponent', () => {
     expiresAt: '2026-09-04T12:15:00Z',
     status: 'Active',
     isExpired: false,
-    items: [{ productId: createdProduct.id, quantity: 2 }]
+    items: [{ productId: product.id, quantity: 2 }]
   };
 
   const order: OrderResponse = {
     id: 'order-1',
-    checkoutId: 'checkout-1',
+    checkoutId: activeCheckout.id,
     createdAt: '2026-09-04T12:05:00Z',
     total: 1000,
-    items: [{
-      productId: createdProduct.id,
-      productName: createdProduct.name,
-      unitPrice: createdProduct.price,
-      quantity: 2
-    }]
+    items: [{ productId: product.id, productName: product.name, unitPrice: product.price, quantity: 2 }]
   };
 
   beforeEach(async () => {
     api = jasmine.createSpyObj<OrderflowApiService>('OrderflowApiService', [
-      'createProduct',
+      'listProducts',
       'getProduct',
-      'addStock',
       'startCheckout',
       'cancelCheckout',
       'completeCheckout',
       'getOrder'
     ]);
+    api.listProducts.and.returnValue(of([product]));
 
     await TestBed.configureTestingModule({
       imports: [LaboratoryComponent],
@@ -66,50 +60,35 @@ describe('LaboratoryComponent', () => {
 
     fixture = TestBed.createComponent(LaboratoryComponent);
     fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
   });
 
-  it('should create a product and present its initial inventory state', async () => {
-    api.createProduct.and.returnValue(of(createdProduct));
-
-    await clickButton('Create product');
-
-    expect(api.createProduct).toHaveBeenCalledOnceWith({
-      name: 'Mechanical Keyboard',
-      price: 500
-    });
-    expect(pageText()).toContain(createdProduct.name);
-    expect(pageText()).toContain(createdProduct.id);
-    expect(pageText()).toContain('Product created. Add stock before starting checkout.');
+  it('should render the public catalog without administrative commands', () => {
+    expect(api.listProducts).toHaveBeenCalledTimes(1);
+    expect(pageText()).toContain(product.name);
+    expect(pageText()).toContain('10 available');
+    expect(pageText()).not.toContain('Create product');
+    expect(pageText()).not.toContain('Add stock');
   });
 
-  it('should start checkout and show the resulting reservation', async () => {
-    api.createProduct.and.returnValue(of(createdProduct));
+  it('should start checkout for the selected catalog product', async () => {
     api.startCheckout.and.returnValue(of(activeCheckout));
     api.getProduct.and.returnValue(of(reservedProduct));
-    await clickButton('Create product');
 
     await clickButton('Start checkout');
 
-    expect(api.startCheckout).toHaveBeenCalledOnceWith(createdProduct.id, 2);
-    expect(api.getProduct).toHaveBeenCalledOnceWith(createdProduct.id);
+    expect(api.startCheckout).toHaveBeenCalledOnceWith(product.id, 2);
     expect(pageText()).toContain('2 unit(s) reserved');
     expect(pageText()).toContain('8 available');
-    expect(pageText()).toContain('Checkout started. Stock is reserved for 15 minutes.');
   });
 
   it('should complete checkout and render the historical order', async () => {
-    const completedProduct: ProductResponse = {
-      ...reservedProduct,
-      stockQuantity: 8,
-      reservedStockQuantity: 0,
-      availableStockQuantity: 8
-    };
-    api.createProduct.and.returnValue(of(createdProduct));
+    const completedProduct = { ...product, stockQuantity: 8, availableStockQuantity: 8 };
     api.startCheckout.and.returnValue(of(activeCheckout));
     api.getProduct.and.returnValues(of(reservedProduct), of(completedProduct));
     api.completeCheckout.and.returnValue(of({ id: order.id, checkoutId: activeCheckout.id }));
     api.getOrder.and.returnValue(of(order));
-    await clickButton('Create product');
     await clickButton('Start checkout');
 
     await clickButton('Complete');
@@ -117,24 +96,23 @@ describe('LaboratoryComponent', () => {
     expect(api.completeCheckout).toHaveBeenCalledOnceWith(activeCheckout.id);
     expect(api.getOrder).toHaveBeenCalledOnceWith(order.id);
     expect(pageText()).toContain('Checkout completed. The order now preserves the commercial snapshot.');
-    const orderIdInput = fixture.nativeElement.querySelector(
-      'input[placeholder="Paste an order id"]'
-    ) as HTMLInputElement;
-    expect(orderIdInput.value).toBe(order.id);
     expect(pageText()).toContain(order.items[0].productName);
     expect(pageText()).toContain('Completed');
   });
 
-  it('should present backend validation errors to the user', async () => {
-    api.createProduct.and.returnValue(throwError(() => new HttpErrorResponse({
-      status: 400,
-      error: { errors: { Name: ['Product name is required.'] } }
+  it('should present catalog errors to the user', async () => {
+    api.listProducts.and.returnValue(throwError(() => new HttpErrorResponse({
+      status: 500,
+      error: { title: 'Catalog unavailable.' }
     })));
 
-    await clickButton('Create product');
+    const errorFixture = TestBed.createComponent(LaboratoryComponent);
+    errorFixture.detectChanges();
+    await errorFixture.whenStable();
+    errorFixture.detectChanges();
 
-    expect(pageText()).toContain('Request failed.');
-    expect(pageText()).toContain('Product name is required.');
+    expect(errorFixture.nativeElement.textContent).toContain('Request failed.');
+    expect(errorFixture.nativeElement.textContent).toContain('Catalog unavailable.');
   });
 
   async function clickButton(label: string): Promise<void> {

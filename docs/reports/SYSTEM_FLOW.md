@@ -11,9 +11,9 @@ how the system behaves. Git history preserves each previous snapshot.
 | --- | --- |
 | Recorded at | 2026-09-10 |
 | Project stage | V1 - Initial implementation |
-| Baseline commit | `27ea7be` |
+| Baseline commit | `888ca6d` |
 | Persistence | EF Core with PostgreSQL 18 for Development and SQLite in-memory for tests |
-| User interfaces | Angular purchase laboratory and authenticated checkout administration |
+| User interfaces | Angular storefront, product administration, and checkout administration |
 | Identity | Keycloak 26.7.3 with a versioned Development realm and PostgreSQL store |
 | Automation | GitHub Actions quality gates and a manual isolated k6 load baseline |
 
@@ -21,13 +21,13 @@ how the system behaves. Git history preserves each previous snapshot.
 
 ```mermaid
 flowchart TD
-    User["Customer - Angular / "] --> CreateProduct["Create product<br/>POST /products"]
+    Admin["Authenticated administrator"] --> CreateProduct["Create product<br/>POST /products"]
+    Admin --> AddStock["Add stock<br/>POST /products/{id}/stock"]
     CreateProduct --> Product["Product<br/>name and price"]
-    CreateProduct --> EmptyInventory["Inventory<br/>Quantity = 0<br/>Reserved = 0"]
-
-    User --> AddStock["Add stock<br/>POST /products/{id}/stock"]
     AddStock --> Inventory["Inventory<br/>Available = Quantity - Reserved"]
 
+    User["Customer - Angular / "] --> Catalog["Browse catalog<br/>GET /products"]
+    Catalog --> Product
     User --> StartCheckout["Start checkout<br/>POST /checkouts"]
     StartCheckout --> Validate{"Products exist and<br/>stock is available?"}
 
@@ -46,7 +46,7 @@ flowchart TD
     Cancel --> Cancelled["Checkout Cancelled"]
 
     Action -->|Time elapses| OperationalExpired["Persisted as Active<br/>Listed operationally as expired"]
-    Admin["Authenticated administrator<br/>Angular /admin/checkouts"] --> List["List lifecycle queues<br/>GET /checkouts?status=..."]
+    Admin --> List["List lifecycle queues<br/>GET /checkouts?status=..."]
     List --> OperationalExpired
     Admin --> Expire["Expire manually<br/>POST /checkouts/{id}/expire"]
     OperationalExpired --> Expire
@@ -54,7 +54,6 @@ flowchart TD
     Release --> Expired["Checkout Expired persisted"]
 
     Product --> Db[("PostgreSQL 18<br/>Docker volume")]
-    EmptyInventory --> Db
     Inventory --> Db
     Active --> Db
     Completed --> Db
@@ -68,10 +67,13 @@ flowchart TD
 
     Identity["Keycloak<br/>OIDC identities and roles"] --> Admin
     Admin -->|"Authorization Code + PKCE"| Identity
+    Automation["HTTP file and k6<br/>technical client"] -->|"Client Credentials"| Identity
     List -.->|"JWT administrator policy"| Identity
     Expire -.->|"JWT administrator policy"| Identity
+    CreateProduct -.->|"JWT administrator policy"| Identity
+    AddStock -.->|"JWT administrator policy"| Identity
 
-    User --> Reads["Available queries"]
+    User --> Reads["Resource queries"]
     Reads --> GetProduct["GET /products/{id}"]
     Reads --> GetCheckout["GET /checkouts/{id}"]
     Reads --> GetOrder
@@ -90,6 +92,8 @@ flowchart LR
         Runner --> Api["OrderFlow API<br/>Release process<br/>localhost:5217"]
         Runner --> K6["k6 v2.2.0<br/>Docker container"]
         Runner --> LoadDb[("PostgreSQL 18<br/>tmpfs<br/>localhost:5433")]
+        Runner --> LoadIdentity["Keycloak 26<br/>ephemeral identity store<br/>localhost:8081"]
+        K6 -->|"Client Credentials"| LoadIdentity
         K6 -->|"100 complete checkout journeys"| Api
         Api -->|"EF Core / Npgsql"| LoadDb
     end
@@ -114,12 +118,14 @@ flowchart LR
 
 ## Architectural Boundaries
 
-- Angular provides the customer laboratory and administrative operations.
+- Angular provides a public customer storefront and authenticated product and
+  checkout administration inside one SPA.
 - Keycloak authenticates Development users and issues JWT access tokens through
   Authorization Code with PKCE; its data is isolated in a dedicated PostgreSQL
   database.
 - The API validates issuer, audience, signature, lifetime, and the
-  `administrator` role for checkout listing and manual expiration.
+  `administrator` role for product creation, stock addition, checkout listing,
+  and manual expiration.
 - Angular route guards improve navigation but are not the authorization
   boundary; server-side policies protect administrative data and commands.
 - ASP.NET Core exposes feature-oriented Minimal API endpoints.
@@ -138,13 +144,13 @@ flowchart LR
   under concurrent requests against the real provider.
 - Liveness reports whether the process answers HTTP without consulting external
   dependencies; readiness additionally verifies database connectivity.
-- The manual k6 harness measures a Release API against ephemeral PostgreSQL and
+- The manual k6 harness obtains a machine token through Client Credentials,
+  measures a Release API against ephemeral PostgreSQL and Keycloak, and
   validates stock and Order invariants after every generated journey.
 
 ## Known Missing Flows
 
 - Customer resource ownership and authenticated customer operations
-- Administrative protection for product and inventory commands
 - Automatic reservation expiration
 - Payment processing
 - Product maintenance beyond creation
@@ -163,3 +169,4 @@ flowchart LR
 | 2026-09-07 | Operational health | Added separate process liveness and database readiness signals. |
 | 2026-09-10 | Load baseline | Measured 100 isolated checkout journeys while preserving business invariants. |
 | 2026-09-10 | Authentication boundary | Added Keycloak OIDC and protected checkout administration by role. |
+| 2026-09-10 | Storefront boundary | Added a public catalog, protected product operations, and separated customer and administrator UI flows. |

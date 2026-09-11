@@ -1,5 +1,6 @@
 using OrderFlow.Api.Products.CreateProduct;
 using OrderFlow.Api.Products.GetProduct;
+using OrderFlow.Api.Products.ListProducts;
 
 namespace OrderFlow.Api.Products;
 
@@ -14,6 +15,7 @@ internal static class ProductsModule
     {
         app.MapCreateProduct();
         app.MapGetProduct();
+        app.MapListProducts();
 
         return app;
     }

@@ -1,5 +1,5 @@
 <header class="app-header">
-  <a class="brand" routerLink="/" aria-label="OrderFlow laboratory home">
+  <a class="brand" routerLink="/" aria-label="OrderFlow storefront home">
     <span class="brand-mark">OF</span>
     <span>
       <strong>OrderFlow</strong>
@@ -9,9 +9,12 @@
 
   <nav aria-label="Primary navigation">
     <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-      Laboratory
+      Storefront
     </a>
     @if (auth.isAdministrator()) {
+      <a routerLink="/admin/products" routerLinkActive="active">
+        Product operations
+      </a>
       <a routerLink="/admin/checkouts" routerLinkActive="active">
         Checkout operations
       </a>

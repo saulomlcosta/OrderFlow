@@ -37,7 +37,7 @@ describe('AppComponent', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('Laboratory');
+    expect(compiled.textContent).toContain('Storefront');
     expect(compiled.textContent).toContain('Sign in');
     expect(compiled.textContent).not.toContain('Checkout operations');
   });
@@ -52,6 +52,7 @@ describe('AppComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
 
     expect(compiled.textContent).toContain('Checkout operations');
+    expect(compiled.textContent).toContain('Product operations');
     expect(compiled.textContent).toContain('administrator');
     expect(compiled.textContent).toContain('Sign out');
   });

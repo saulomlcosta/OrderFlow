@@ -23,13 +23,14 @@ named volume. EF Core applies pending migrations at Development startup, so data
 survives API and container restarts. SQLite in-memory remains an explicit test
 provider for fast and isolated integration and browser tests.
 
-The repository now also contains a small Angular 18 frontend written in
-TypeScript. It is intentionally a thin laboratory UI that exercises the current
-backend flow rather than a full product experience.
+The repository now also contains an Angular 18 frontend written in TypeScript.
+One SPA exposes a customer storefront and separate authenticated administration
+workspaces without creating independent frontend deployments.
 
 ## Current Capabilities
 
 - Create a product
+- List the public product catalog with current availability
 - Add stock to a product
 - Get a product with its current stock quantity
 - Start a checkout and reserve quantity
@@ -53,6 +54,10 @@ backend flow rather than a full product experience.
 - Authenticate Angular users through Keycloak with Authorization Code and PKCE
 - Validate Keycloak JWT access tokens in the API
 - Restrict checkout listing and manual expiration to administrators
+- Restrict product creation and stock addition to administrators
+- Provision products and stock through `/admin/products`
+- Browse the catalog and complete purchases through the customer-oriented `/`
+- Authenticate non-browser local automation through Client Credentials
 
 ## Current Domain Concepts
 
@@ -148,6 +153,21 @@ receive `401` from checkout administration, and authenticated non-administrators
 receive `403`. The remaining customer endpoints are intentionally anonymous
 until Checkout and Order can be associated with the authenticated subject.
 
+The storefront now starts from public `GET /products` instead of exposing data
+provisioning controls. Product creation and stock addition moved to
+`/admin/products` and require the same server-side administrator policy as
+checkout operations. The E2E test enters through the real Keycloak login before
+provisioning inventory and then completes the purchase in the storefront.
+
+The authenticated E2E exposed JWT claim remapping between Keycloak and ASP.NET
+Core. Disabling inbound claim mapping preserves the emitted `roles` claim, so
+the authorization policy and token contract now use the same name explicitly.
+
+The k6 harness now starts an additional ephemeral Keycloak environment and uses
+the `orderflow-automation` service account. This keeps human PKCE authentication
+separate from machine-to-machine Client Credentials while preserving complete
+test isolation.
+
 ## Recent Adjustment
 
 Kept one DbContext for transactional simplicity, but moved EF Core mapping details
@@ -160,9 +180,10 @@ exercised directly from `OrderFlow.Api.http`.
 The frontend uses a local dev proxy so `npm start` can call the API directly
 while the backend runs on `http://localhost:5216`.
 
-The Angular application now has two explicit user experiences:
+The Angular application now has three explicit user experiences:
 
-- `/` for the purchase laboratory
+- `/` for the public storefront and purchase journey
+- `/admin/products` for catalog and inventory operations
 - `/admin/checkouts` for reservation operations
 
 Checkout reservations now have an explicit lifecycle boundary:
@@ -175,7 +196,6 @@ Checkout reservations now have an explicit lifecycle boundary:
 ## Known Limitations
 
 - No customer resource ownership
-- Product creation and stock addition are not yet restricted to administrators
 - No product update endpoint
 - No messaging
 - No caching
@@ -193,7 +213,6 @@ Checkout reservations now have an explicit lifecycle boundary:
 
 ## Next Step
 
-Turn the laboratory root into a customer-oriented catalog while moving product
-creation and stock operations to `/admin/products`. Then associate Checkout and
-Order with the authenticated Keycloak subject before protecting customer
-operations.
+Define and persist customer ownership by associating Checkout and Order with the
+authenticated Keycloak `sub`. Then protect customer operations without losing
+the separate administrator-wide operational view.

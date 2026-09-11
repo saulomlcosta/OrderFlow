@@ -1,6 +1,6 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 
@@ -19,20 +19,15 @@ import {
   templateUrl: './laboratory.component.html',
   styleUrl: './laboratory.component.css'
 })
-export class LaboratoryComponent {
+export class LaboratoryComponent implements OnInit {
   private readonly api = inject(OrderflowApiService);
 
-  protected readonly productName = signal('Mechanical Keyboard');
-  protected readonly productPrice = signal(500);
-  protected readonly stockQuantity = signal(10);
+  protected readonly products = signal<ProductResponse[]>([]);
   protected readonly checkoutQuantity = signal(2);
-  protected readonly productIdInput = signal('');
-  protected readonly orderIdInput = signal('');
-
   protected readonly product = signal<ProductResponse | null>(null);
   protected readonly checkout = signal<CheckoutResponse | null>(null);
   protected readonly order = signal<OrderResponse | null>(null);
-  protected readonly message = signal('Create a product to begin the purchase flow.');
+  protected readonly message = signal('Loading the product catalog.');
   protected readonly error = signal('');
   protected readonly busy = signal('');
 
@@ -46,43 +41,20 @@ export class LaboratoryComponent {
     return product.reservedStockQuantity > 0 ? 'warning' : 'success';
   });
 
-  protected async createProduct(): Promise<void> {
-    await this.run('Creating product', async () => {
-      const product = await firstValueFrom(this.api.createProduct({
-        name: this.productName().trim(),
-        price: Number(this.productPrice())
-      }));
-
-      this.product.set(product);
-      this.productIdInput.set(product.id);
-      this.checkout.set(null);
-      this.order.set(null);
-      this.orderIdInput.set('');
-      this.message.set('Product created. Add stock before starting checkout.');
-    });
+  ngOnInit(): void {
+    void this.loadCatalog();
   }
 
-  protected async loadProduct(): Promise<void> {
-    await this.run('Loading product', async () => {
-      const product = await firstValueFrom(this.api.getProduct(this.requireProductId()));
-      this.product.set(product);
-      this.message.set('Product loaded with its current inventory state.');
-    });
-  }
-
-  protected async addStock(): Promise<void> {
-    await this.run('Adding stock', async () => {
-      const product = await firstValueFrom(
-        this.api.addStock(this.requireProductId(), Number(this.stockQuantity()))
-      );
-      this.product.set(product);
-      this.message.set('Stock added. The product is ready for checkout.');
-    });
+  protected selectProduct(product: ProductResponse): void {
+    this.product.set(product);
+    this.checkout.set(null);
+    this.order.set(null);
+    this.message.set(`${product.name} selected. Choose a quantity to reserve.`);
   }
 
   protected async startCheckout(): Promise<void> {
     await this.run('Starting checkout', async () => {
-      const productId = this.requireProductId();
+      const productId = this.requireProduct().id;
       const checkout = await firstValueFrom(
         this.api.startCheckout(productId, Number(this.checkoutQuantity()))
       );
@@ -97,7 +69,7 @@ export class LaboratoryComponent {
     await this.run('Cancelling checkout', async () => {
       const checkout = this.requireCheckout();
       this.checkout.set(await firstValueFrom(this.api.cancelCheckout(checkout.id)));
-      await this.refreshProduct(this.requireProductId());
+      await this.refreshProduct(this.requireProduct().id);
       this.message.set('Checkout cancelled. Reserved stock is available again.');
     });
   }
@@ -108,25 +80,26 @@ export class LaboratoryComponent {
       const result = await firstValueFrom(this.api.completeCheckout(checkout.id));
 
       this.checkout.set({ ...checkout, status: 'Completed', isExpired: false });
-      this.orderIdInput.set(result.id);
       await Promise.all([
-        this.refreshProduct(this.requireProductId()),
+        this.refreshProduct(this.requireProduct().id),
         this.loadOrderById(result.id)
       ]);
       this.message.set('Checkout completed. The order now preserves the commercial snapshot.');
     });
   }
 
-  protected async loadOrder(): Promise<void> {
-    await this.run('Loading order', async () => {
-      const orderId = this.orderIdInput().trim();
+  private async loadCatalog(): Promise<void> {
+    await this.run('Loading catalog', async () => {
+      const products = await firstValueFrom(this.api.listProducts());
+      this.products.set(products);
 
-      if (!orderId) {
-        throw new Error('Order id is required.');
+      if (products.length === 0) {
+        this.message.set('The catalog is empty. An administrator can provision products.');
+        return;
       }
 
-      await this.loadOrderById(orderId);
-      this.message.set('Order loaded.');
+      this.product.set(products[0]);
+      this.message.set(`${products.length} product(s) available in the catalog.`);
     });
   }
 
@@ -143,14 +116,14 @@ export class LaboratoryComponent {
     }
   }
 
-  private requireProductId(): string {
-    const productId = (this.productIdInput() || this.product()?.id || '').trim();
+  private requireProduct(): ProductResponse {
+    const product = this.product();
 
-    if (!productId) {
-      throw new Error('Product id is required.');
+    if (!product) {
+      throw new Error('Select a product before starting checkout.');
     }
 
-    return productId;
+    return product;
   }
 
   private requireCheckout(): CheckoutResponse {
@@ -164,7 +137,11 @@ export class LaboratoryComponent {
   }
 
   private async refreshProduct(productId: string): Promise<void> {
-    this.product.set(await firstValueFrom(this.api.getProduct(productId)));
+    const product = await firstValueFrom(this.api.getProduct(productId));
+    this.product.set(product);
+    this.products.update(products => products.map(candidate =>
+      candidate.id === product.id ? product : candidate
+    ));
   }
 
   private async loadOrderById(orderId: string): Promise<void> {

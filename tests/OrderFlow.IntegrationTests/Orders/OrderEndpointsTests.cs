@@ -15,6 +15,7 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory) : IntegrationTestB
 {
     private readonly OrderFlowApiFactory _factory = factory;
     private readonly HttpClient _client = factory.CreateClient();
+    private readonly HttpClient _administratorClient = factory.CreateAdministratorClient();
 
     [Fact]
     public async Task CompleteCheckout_WithEnoughReservedStock_Succeeds_AndDecreasesInventory()
@@ -186,7 +187,7 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory) : IntegrationTestB
 
     private async Task<Guid> CreateProductAsync(string name, decimal price)
     {
-        var response = await _client.PostAsJsonAsync("/products", new
+        var response = await _administratorClient.PostAsJsonAsync("/products", new
         {
             Name = name,
             Price = price
@@ -200,7 +201,7 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory) : IntegrationTestB
 
     private async Task AddStockAsync(Guid productId, int quantity)
     {
-        var response = await _client.PostAsJsonAsync($"/products/{productId}/stock", new
+        var response = await _administratorClient.PostAsJsonAsync($"/products/{productId}/stock", new
         {
             Quantity = quantity
         });

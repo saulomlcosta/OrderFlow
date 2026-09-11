@@ -8,7 +8,7 @@ namespace OrderFlow.IntegrationTests.Products;
 [Collection(nameof(OrderFlowApiCollection))]
 public class ProductEndpointsTests(OrderFlowApiFactory factory) : IntegrationTestBase(factory)
 {
-    private readonly HttpClient _client = factory.CreateClient();
+    private readonly HttpClient _client = factory.CreateAdministratorClient();
 
     [Fact]
     public async Task CreateProduct_Succeeds()
@@ -29,6 +29,52 @@ public class ProductEndpointsTests(OrderFlowApiFactory factory) : IntegrationTes
         Assert.Equal(0, product.StockQuantity);
         Assert.Equal(0, product.ReservedStockQuantity);
         Assert.Equal(0, product.AvailableStockQuantity);
+    }
+
+    [Fact]
+    public async Task ListProducts_ReturnsPublicCatalogOrderedByName()
+    {
+        await CreateProductAsync("Monitor", 1200m);
+        await CreateProductAsync("Keyboard", 500m);
+
+        using var anonymousClient = Factory.CreateClient();
+        var response = await anonymousClient.GetAsync("/products");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var products = await response.Content.ReadFromJsonAsync<ProductResponse[]>();
+
+        Assert.NotNull(products);
+        Assert.Equal(["Keyboard", "Monitor"], products.Select(x => x.Name));
+    }
+
+    [Theory]
+    [InlineData("/products")]
+    [InlineData("/products/00000000-0000-0000-0000-000000000000/stock")]
+    public async Task AdministrativeProductCommands_WithoutAuthentication_ReturnUnauthorized(string endpoint)
+    {
+        using var anonymousClient = Factory.CreateClient();
+        var response = await anonymousClient.PostAsJsonAsync(endpoint, new
+        {
+            Name = "Unauthorized Product",
+            Price = 10m,
+            Quantity = 1
+        });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateProduct_AsCustomer_ReturnsForbidden()
+    {
+        using var customerClient = Factory.CreateClient().AsCustomer();
+        var response = await customerClient.PostAsJsonAsync("/products", new
+        {
+            Name = "Customer Product",
+            Price = 10m
+        });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]

@@ -45,8 +45,9 @@ decision, and evidence.
 - Communication between Angular and the API is synchronous HTTP/JSON.
 - Keycloak is the Development identity provider. Angular uses Authorization
   Code with PKCE, and the API validates JWT bearer tokens.
-- Checkout listing and manual expiration require the `administrator` role.
-  Customer operations remain anonymous until resource ownership is implemented.
+- Product creation, stock addition, checkout listing, and manual expiration
+  require the `administrator` role. Customer operations remain anonymous until
+  resource ownership is implemented.
 - There is no payment provider, message broker, or cart yet.
 
 Do not add repositories, generic abstractions, CQRS, MediatR, new DbContexts,

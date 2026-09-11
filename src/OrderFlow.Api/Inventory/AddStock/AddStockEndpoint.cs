@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using OrderFlow.Api.Authentication;
 using OrderFlow.Api.Common;
 using OrderFlow.Api.Persistence;
 using OrderFlow.Api.Products;
@@ -9,7 +10,8 @@ internal static class AddStockEndpoint
 {
     internal static void MapAddStock(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/products/{id:guid}/stock", HandleAsync);
+        app.MapPost("/products/{id:guid}/stock", HandleAsync)
+            .RequireAuthorization(OrderFlowPolicies.Administrator);
     }
 
     private static async Task<IResult> HandleAsync(

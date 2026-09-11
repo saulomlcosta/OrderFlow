@@ -15,7 +15,7 @@ public sealed class DatabaseIsolationTests : IntegrationTestBase
         : base(factory)
     {
         _factory = factory;
-        _client = factory.CreateClient();
+        _client = factory.CreateAdministratorClient();
     }
 
     [Theory]

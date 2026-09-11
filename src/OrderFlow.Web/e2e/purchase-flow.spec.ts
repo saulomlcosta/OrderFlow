@@ -1,22 +1,29 @@
 import { expect, test } from '@playwright/test';
 
 test('customer completes the purchase flow and sees the order', async ({ page }) => {
+  await page.goto('/admin/products');
+
+  await page.locator('#username').fill('administrator');
+  await page.locator('#password').fill('administrator');
+  await page.locator('#kc-login').click();
+
+  await expect(page.getByRole('heading', { name: 'Catalog operations' })).toBeVisible();
+  await page.getByRole('button', { name: 'Create product' }).click();
+  await expect(page.getByText('Product created. Add physical stock before customers can reserve it.')).toBeVisible();
+  await page.getByRole('button', { name: 'Add stock' }).click();
+  await expect(page.getByText('Physical stock added. Availability is visible in the storefront.')).toBeVisible();
+
   await page.goto('/');
 
-  await expect(page.getByRole('heading', { name: 'Purchase laboratory' })).toBeVisible();
-
-  await page.getByRole('button', { name: 'Create product' }).click();
-  await expect(page.getByText('Product created. Add stock before starting checkout.')).toBeVisible();
-  await expect(page.getByText('Mechanical Keyboard', { exact: true })).toBeVisible();
-
-  await page.getByRole('button', { name: 'Add stock' }).click();
-  await expect(page.getByText('Stock added. The product is ready for checkout.')).toBeVisible();
-  await expect(page.getByText('10 available', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Choose. Reserve. Complete.' })).toBeVisible();
+  const catalogProduct = page.getByRole('button', { name: /Mechanical Keyboard/ });
+  await expect(catalogProduct).toBeVisible();
+  await expect(catalogProduct).toContainText('10 available');
 
   await page.getByRole('button', { name: 'Start checkout' }).click();
   await expect(page.getByText('Checkout started. Stock is reserved for 15 minutes.')).toBeVisible();
   await expect(page.getByText('2 unit(s) reserved', { exact: true })).toBeVisible();
-  await expect(page.getByText('8 available', { exact: true })).toBeVisible();
+  await expect(catalogProduct).toContainText('8 available');
 
   await page.getByRole('button', { name: 'Complete', exact: true }).click();
 

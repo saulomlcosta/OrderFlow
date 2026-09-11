@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using OrderFlow.Api.Authentication;
 using OrderFlow.Api.Common;
 using OrderFlow.Api.Persistence;
 
@@ -8,7 +9,8 @@ internal static class CreateProductEndpoint
 {
     internal static void MapCreateProduct(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/products", HandleAsync);
+        app.MapPost("/products", HandleAsync)
+            .RequireAuthorization(OrderFlowPolicies.Administrator);
     }
 
     private static async Task<IResult> HandleAsync(

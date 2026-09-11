@@ -1,9 +1,18 @@
 @OrderFlow.Api_HostAddress = http://localhost:5216
+@Identity_HostAddress = http://localhost:8080
+
+###
+# @name automationToken
+POST {{Identity_HostAddress}}/realms/orderflow/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=client_credentials&client_id=orderflow-automation&client_secret=orderflow-automation-local
 
 ###
 # @name createProduct
 POST {{OrderFlow.Api_HostAddress}}/products
 Content-Type: application/json
+Authorization: Bearer {{automationToken.response.body.$.access_token}}
 
 {
   "name": "Mechanical Keyboard",
@@ -14,6 +23,7 @@ Content-Type: application/json
 # @name addStock
 POST {{OrderFlow.Api_HostAddress}}/products/{{createProduct.response.body.$.id}}/stock
 Content-Type: application/json
+Authorization: Bearer {{automationToken.response.body.$.access_token}}
 
 {
   "quantity": 10
