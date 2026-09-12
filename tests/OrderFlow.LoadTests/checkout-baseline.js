@@ -37,7 +37,10 @@ const jsonRequest = (name, token) => ({
   tags: { name },
 });
 
-const namedRequest = (name) => ({ tags: { name } });
+const namedRequest = (name, token) => ({
+  headers: token ? { Authorization: `Bearer ${token}` } : {},
+  tags: { name },
+});
 
 const hasStatus = (response, expectedStatus, label) =>
   check(response, {
@@ -110,7 +113,7 @@ export default function (data) {
     const startCheckoutResponse = http.post(
       `${baseUrl}/checkouts`,
       JSON.stringify({ items: [{ productId: product.id, quantity: 1 }] }),
-      jsonRequest('POST /checkouts'),
+      jsonRequest('POST /checkouts', data.accessToken),
     );
     startCheckoutDuration.add(startCheckoutResponse.timings.duration);
 
@@ -126,7 +129,7 @@ export default function (data) {
     const completeCheckoutResponse = http.post(
       `${baseUrl}/checkouts/${checkout.id}/complete`,
       null,
-      namedRequest('POST /checkouts/{id}/complete'),
+      namedRequest('POST /checkouts/{id}/complete', data.accessToken),
     );
     completeCheckoutDuration.add(completeCheckoutResponse.timings.duration);
 
@@ -147,7 +150,7 @@ export default function (data) {
     );
     const orderResponse = http.get(
       `${baseUrl}/orders/${createdOrder.id}`,
-      namedRequest('GET /orders/{id}'),
+      namedRequest('GET /orders/{id}', data.accessToken),
     );
 
     const productAfterCompletion = parseJson(productResponse);

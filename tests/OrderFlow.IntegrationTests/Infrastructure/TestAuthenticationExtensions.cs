@@ -20,17 +20,23 @@ internal static class TestAuthenticationExtensions
         return services;
     }
 
-    internal static HttpClient AsAdministrator(this HttpClient client)
+    internal static HttpClient AsAdministrator(
+        this HttpClient client,
+        string subject = "administrator-test-user")
     {
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
             TestAuthenticationHandler.AuthenticationScheme);
+        client.DefaultRequestHeaders.Add("X-Test-Subject", subject);
         return client;
     }
 
-    internal static HttpClient AsCustomer(this HttpClient client)
+    internal static HttpClient AsCustomer(
+        this HttpClient client,
+        string subject = "customer-test-user")
     {
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
             TestAuthenticationHandler.AuthenticationScheme);
+        client.DefaultRequestHeaders.Add("X-Test-Subject", subject);
         client.DefaultRequestHeaders.Add("X-Test-Roles", "customer");
         return client;
     }

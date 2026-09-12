@@ -38,6 +38,7 @@ Accept: application/json
 # @name startCheckout
 POST {{OrderFlow.Api_HostAddress}}/checkouts
 Content-Type: application/json
+Authorization: Bearer {{automationToken.response.body.$.access_token}}
 
 {
   "items": [
@@ -57,15 +58,18 @@ Accept: application/json
 # @name getCheckout
 GET {{OrderFlow.Api_HostAddress}}/checkouts/{{startCheckout.response.body.$.id}}
 Accept: application/json
+Authorization: Bearer {{automationToken.response.body.$.access_token}}
 
 ###
 # @name cancelCheckout
 POST {{OrderFlow.Api_HostAddress}}/checkouts/{{startCheckout.response.body.$.id}}/cancel
+Authorization: Bearer {{automationToken.response.body.$.access_token}}
 
 ###
 # @name startAnotherCheckout
 POST {{OrderFlow.Api_HostAddress}}/checkouts
 Content-Type: application/json
+Authorization: Bearer {{automationToken.response.body.$.access_token}}
 
 {
   "items": [
@@ -80,10 +84,12 @@ Content-Type: application/json
 # @name listExpiredCheckouts
 GET {{OrderFlow.Api_HostAddress}}/checkouts?status=expired
 Accept: application/json
+Authorization: Bearer {{automationToken.response.body.$.access_token}}
 
 ###
 # @name expireCheckout
 POST {{OrderFlow.Api_HostAddress}}/checkouts/{{startAnotherCheckout.response.body.$.id}}/expire
+Authorization: Bearer {{automationToken.response.body.$.access_token}}
 
 ###
 # @name getProductAfterExpiration
@@ -94,6 +100,7 @@ Accept: application/json
 # @name startFinalCheckout
 POST {{OrderFlow.Api_HostAddress}}/checkouts
 Content-Type: application/json
+Authorization: Bearer {{automationToken.response.body.$.access_token}}
 
 {
   "items": [
@@ -107,6 +114,7 @@ Content-Type: application/json
 ###
 # @name completeCheckout
 POST {{OrderFlow.Api_HostAddress}}/checkouts/{{startFinalCheckout.response.body.$.id}}/complete
+Authorization: Bearer {{automationToken.response.body.$.access_token}}
 
 ###
 # @name getProductAfterCompletion
@@ -117,3 +125,4 @@ Accept: application/json
 # @name getOrder
 GET {{OrderFlow.Api_HostAddress}}/orders/{{completeCheckout.response.body.$.id}}
 Accept: application/json
+Authorization: Bearer {{automationToken.response.body.$.access_token}}

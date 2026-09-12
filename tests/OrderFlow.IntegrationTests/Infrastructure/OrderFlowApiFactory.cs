@@ -57,6 +57,9 @@ public sealed class OrderFlowApiFactory : WebApplicationFactory<Program>, IAsync
 
     internal HttpClient CreateAdministratorClient() => CreateClient().AsAdministrator();
 
+    internal HttpClient CreateCustomerClient(string subject = "customer-test-user") =>
+        CreateClient().AsCustomer(subject);
+
     internal void AdvanceTime(TimeSpan duration)
     {
         _timeProvider.Advance(duration);

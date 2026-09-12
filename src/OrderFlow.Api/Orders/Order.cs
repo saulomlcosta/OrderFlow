@@ -10,6 +10,8 @@ internal sealed class Order
 
     internal Guid? CheckoutId { get; private set; }
 
+    internal string? CustomerSubject { get; private set; }
+
     internal DateTimeOffset CreatedAt { get; private set; }
 
     internal IReadOnlyCollection<OrderItem> Items => _items.AsReadOnly();
@@ -22,12 +24,18 @@ internal sealed class Order
 
     internal static Order Create(
         Guid checkoutId,
+        string customerSubject,
         IEnumerable<OrderItem> items,
         DateTimeOffset? createdAt = null)
     {
         if (checkoutId == Guid.Empty)
         {
             throw new DomainValidationException("Order must reference a valid checkout.");
+        }
+
+        if (string.IsNullOrWhiteSpace(customerSubject))
+        {
+            throw new DomainValidationException("Order must reference a customer subject.");
         }
 
         var materializedItems = items.ToList();
@@ -41,6 +49,7 @@ internal sealed class Order
         {
             Id = Guid.NewGuid(),
             CheckoutId = checkoutId,
+            CustomerSubject = customerSubject,
             CreatedAt = createdAt ?? DateTimeOffset.UtcNow
         };
 

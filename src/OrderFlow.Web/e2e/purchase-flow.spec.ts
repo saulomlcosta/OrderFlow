@@ -13,12 +13,17 @@ test('customer completes the purchase flow and sees the order', async ({ page })
   await page.getByRole('button', { name: 'Add stock' }).click();
   await expect(page.getByText('Physical stock added. Availability is visible in the storefront.')).toBeVisible();
 
-  await page.goto('/');
+  await page.getByRole('button', { name: 'Sign out' }).click();
 
   await expect(page.getByRole('heading', { name: 'Choose. Reserve. Complete.' })).toBeVisible();
   const catalogProduct = page.getByRole('button', { name: /Mechanical Keyboard/ });
   await expect(catalogProduct).toBeVisible();
   await expect(catalogProduct).toContainText('10 available');
+
+  await page.getByRole('button', { name: 'Sign in to checkout' }).click();
+  await page.locator('#username').fill('customer');
+  await page.locator('#password').fill('customer');
+  await page.locator('#kc-login').click();
 
   await page.getByRole('button', { name: 'Start checkout' }).click();
   await expect(page.getByText('Checkout started. Stock is reserved for 15 minutes.')).toBeVisible();

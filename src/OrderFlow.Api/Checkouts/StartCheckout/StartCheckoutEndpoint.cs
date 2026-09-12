@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
+using OrderFlow.Api.Authentication;
 using OrderFlow.Api.Checkouts;
 using OrderFlow.Api.Common;
 using OrderFlow.Api.Persistence;
@@ -9,15 +11,24 @@ internal static class StartCheckoutEndpoint
 {
     internal static void MapStartCheckout(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/checkouts", HandleAsync);
+        app.MapPost("/checkouts", HandleAsync)
+            .RequireAuthorization();
     }
 
     private static async Task<IResult> HandleAsync(
         StartCheckoutRequest request,
+        ClaimsPrincipal user,
         OrderFlowDbContext dbContext,
         TimeProvider timeProvider,
         CancellationToken cancellationToken)
     {
+        var customerSubject = user.GetSubject();
+
+        if (customerSubject is null)
+        {
+            return Results.Unauthorized();
+        }
+
         var validationErrors = ValidateRequest(request);
 
         if (validationErrors.Count > 0)
@@ -71,6 +82,7 @@ internal static class StartCheckoutEndpoint
             }
 
             var checkout = Checkout.Start(
+                customerSubject,
                 requestedItems.Select(item => CheckoutItem.Create(item.ProductId, item.Quantity)),
                 createdAt: timeProvider.GetUtcNow());
 

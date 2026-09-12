@@ -21,9 +21,14 @@ internal sealed class TestAuthenticationHandler(
             return Task.FromResult(AuthenticateResult.NoResult());
         }
 
+        var subject = Request.Headers["X-Test-Subject"].Count > 0
+            ? Request.Headers["X-Test-Subject"].ToString()
+            : "test-user-subject";
+
         var claims = new List<Claim>
         {
-            new(ClaimTypes.NameIdentifier, "administrator-test-user"),
+            new("sub", subject),
+            new(ClaimTypes.NameIdentifier, subject),
             new(ClaimTypes.Name, "test-user")
         };
 

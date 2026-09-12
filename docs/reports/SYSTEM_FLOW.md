@@ -9,9 +9,9 @@ how the system behaves. Git history preserves each previous snapshot.
 
 | Field | Value |
 | --- | --- |
-| Recorded at | 2026-09-10 |
+| Recorded at | 2026-09-11 |
 | Project stage | V1 - Initial implementation |
-| Baseline commit | `888ca6d` |
+| Baseline commit | `6d2bc88` |
 | Persistence | EF Core with PostgreSQL 18 for Development and SQLite in-memory for tests |
 | User interfaces | Angular storefront, product administration, and checkout administration |
 | Identity | Keycloak 26.7.3 with a versioned Development realm and PostgreSQL store |
@@ -28,19 +28,23 @@ flowchart TD
 
     User["Customer - Angular / "] --> Catalog["Browse catalog<br/>GET /products"]
     Catalog --> Product
-    User --> StartCheckout["Start checkout<br/>POST /checkouts"]
+    User --> Login["Sign in when checkout starts<br/>Authorization Code + PKCE"]
+    Login --> Identity
+    Identity -->|"JWT with sub"| StartCheckout["Start owned checkout<br/>POST /checkouts"]
     StartCheckout --> Validate{"Products exist and<br/>stock is available?"}
 
     Validate -->|No| BusinessError["Business validation error<br/>No reservation is created"]
     Validate -->|Yes - atomic update| Reserve["ReservedQuantity += quantity"]
-    Reserve --> Active["Checkout Active<br/>15-minute reservation"]
+    Reserve --> Active["Checkout Active<br/>CustomerSubject = JWT sub<br/>15-minute reservation"]
 
-    Active --> Action{"Next action"}
+    Active --> Action{"Owner's next action"}
 
     Action -->|Complete before expiration| ConfirmStock["Transaction<br/>Quantity -= quantity<br/>Reserved -= quantity"]
     ConfirmStock --> Completed["Checkout Completed"]
-    Completed --> Order["Order created<br/>CheckoutId persisted<br/>name, price, and quantity preserved"]
-    Order --> GetOrder["Get order<br/>GET /orders/{id}"]
+    Completed --> Order["Order created<br/>CheckoutId and CustomerSubject persisted<br/>name, price, and quantity preserved"]
+    Order --> Ownership{"Owner or administrator?"}
+    Ownership -->|"Yes"| GetOrder["Get order<br/>GET /orders/{id}"]
+    Ownership -->|"No"| Hidden["404 Not Found"]
 
     Action -->|Cancel before expiration| Cancel["ReservedQuantity -= quantity"]
     Cancel --> Cancelled["Checkout Cancelled"]
@@ -73,10 +77,12 @@ flowchart TD
     CreateProduct -.->|"JWT administrator policy"| Identity
     AddStock -.->|"JWT administrator policy"| Identity
 
-    User --> Reads["Resource queries"]
+    User --> Reads["Authenticated resource queries"]
     Reads --> GetProduct["GET /products/{id}"]
-    Reads --> GetCheckout["GET /checkouts/{id}"]
-    Reads --> GetOrder
+    Reads --> CustomerOwnership{"Owns resource?"}
+    CustomerOwnership -->|"Yes"| GetCheckout["GET /checkouts/{id}"]
+    CustomerOwnership -->|"Yes"| GetOrder
+    CustomerOwnership -->|"No"| Hidden
 ```
 
 ## Load-Test Boundary
@@ -115,6 +121,13 @@ flowchart LR
 - Order items preserve the product name and price read at completion time.
 - Every new order preserves the checkout that originated it; legacy orders may
   have no `CheckoutId` because the relationship was introduced later.
+- Every new checkout captures the authenticated OIDC `sub`, and its resulting
+  order preserves that same customer subject.
+- Customers can read, cancel, and complete only their own resources. A different
+  customer receives `404`; administrators may read any resource but cannot
+  complete another customer's purchase.
+- Legacy ownerless purchases remain visible to administrators but cannot be
+  claimed or completed by a customer.
 
 ## Architectural Boundaries
 
@@ -126,6 +139,9 @@ flowchart LR
 - The API validates issuer, audience, signature, lifetime, and the
   `administrator` role for product creation, stock addition, checkout listing,
   and manual expiration.
+- Authenticated customer commands use the OIDC `sub` as the stable ownership
+  key. Indexed nullable database columns preserve legacy rows, while new domain
+  objects require ownership.
 - Angular route guards improve navigation but are not the authorization
   boundary; server-side policies protect administrative data and commands.
 - ASP.NET Core exposes feature-oriented Minimal API endpoints.
@@ -150,7 +166,7 @@ flowchart LR
 
 ## Known Missing Flows
 
-- Customer resource ownership and authenticated customer operations
+- Customer-scoped history queries and account UI
 - Automatic reservation expiration
 - Payment processing
 - Product maintenance beyond creation
@@ -170,3 +186,4 @@ flowchart LR
 | 2026-09-10 | Load baseline | Measured 100 isolated checkout journeys while preserving business invariants. |
 | 2026-09-10 | Authentication boundary | Added Keycloak OIDC and protected checkout administration by role. |
 | 2026-09-10 | Storefront boundary | Added a public catalog, protected product operations, and separated customer and administrator UI flows. |
+| 2026-09-11 | Customer ownership | Persisted OIDC subjects on purchases and enforced owner-scoped customer operations. |

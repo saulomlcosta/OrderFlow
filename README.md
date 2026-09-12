@@ -21,9 +21,9 @@ SQLite in-memory is a deliberate test substitution, not a production container.
 
 Keycloak is the first external platform integration. It issues OpenID Connect
 identities for the Angular SPA, and the API validates its JWT access tokens.
-The first security slice protects checkout administration; customer ownership
-remains outside the implemented scope. There are no external business
-integrations such as payment or messaging.
+Administrative commands require the administrator role. Customer checkouts and
+orders store the authenticated OIDC subject and enforce resource ownership.
+There are no external business integrations such as payment or messaging.
 
 ### Discovery frame
 
@@ -35,7 +35,7 @@ integrations such as payment or messaging.
 | Responsibilities | Angular provides a public storefront and authenticated administrative workspaces; the API validates tokens and enforces workflows, authorization, and domain rules; PostgreSQL persists business data; Keycloak authenticates users and technical clients. |
 | Integrations | Angular uses OpenID Connect Authorization Code with PKCE against Keycloak and calls the API over HTTP/JSON; the API validates JWTs and accesses PostgreSQL through EF Core and Npgsql. |
 | Constraints | Keep one deployable backend and one DbContext until a demonstrated problem justifies separation. Never allow reserved stock to exceed physical stock. Complete checkout, consume reserved stock, and create the order atomically. |
-| Known gaps | Customer ownership, production identity hardening, payments, automatic reservation expiration, production deployment, observability, performance targets, and asynchronous communication remain undecided or unimplemented. |
+| Known gaps | Customer history UI, production identity hardening, payments, automatic reservation expiration, production deployment, observability, performance targets, and asynchronous communication remain undecided or unimplemented. |
 
 ### Structural diagram - C4-inspired container view
 
@@ -77,12 +77,16 @@ failures explicit.
 sequenceDiagram
     actor Customer
     participant Web as Angular SPA
+    participant Identity as Keycloak
     participant Api as ASP.NET Core API
     participant Db as PostgreSQL
 
     Note over Customer,Db: Precondition: product exists and physical stock was added
     Customer->>Web: Select product and quantity
+    Web->>Identity: Authorization Code + PKCE when unauthenticated
+    Identity-->>Web: Access token containing stable sub
     Web->>Api: POST /checkouts
+    Api->>Api: Validate token and capture customer sub
     Api->>Db: Begin reservation transaction
     loop Each requested product
         Api->>Db: Conditionally increase ReservedQuantity<br/>when available stock is sufficient
@@ -94,6 +98,7 @@ sequenceDiagram
         Web-->>Customer: Explain that stock is unavailable
     else Every quantity is reserved
         Api->>Db: Insert Active Checkout with expiration time
+        Note over Api,Db: Checkout stores CustomerSubject
         Api->>Db: Commit reservation transaction
         Api-->>Web: 201 Checkout created
         Web-->>Customer: Show active reservation
@@ -112,6 +117,7 @@ sequenceDiagram
             Web-->>Customer: Checkout cannot be completed
         else Checkout remains valid
             Api->>Db: Insert Order with CheckoutId<br/>and product name and price snapshot
+            Note over Api,Db: Order copies CustomerSubject from the purchase
             Api->>Db: Update Checkout to Completed
             Api->>Db: Commit completion transaction
             Api-->>Web: 201 Order created

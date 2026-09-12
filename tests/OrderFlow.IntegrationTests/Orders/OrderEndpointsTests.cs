@@ -14,7 +14,7 @@ namespace OrderFlow.IntegrationTests.Orders;
 public class OrderEndpointsTests(OrderFlowApiFactory factory) : IntegrationTestBase(factory)
 {
     private readonly OrderFlowApiFactory _factory = factory;
-    private readonly HttpClient _client = factory.CreateClient();
+    private readonly HttpClient _client = factory.CreateCustomerClient();
     private readonly HttpClient _administratorClient = factory.CreateAdministratorClient();
 
     [Fact]
@@ -97,8 +97,8 @@ public class OrderEndpointsTests(OrderFlowApiFactory factory) : IntegrationTestB
         var productId = await CreateProductAsync("Limited Console", 3000m);
         await AddStockAsync(productId, 1);
 
-        var firstClient = _factory.CreateClient();
-        var secondClient = _factory.CreateClient();
+        var firstClient = _factory.CreateCustomerClient();
+        var secondClient = _factory.CreateCustomerClient();
 
         var firstOrderTask = firstClient.PostAsJsonAsync("/checkouts", new
         {

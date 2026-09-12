@@ -12,6 +12,8 @@ internal sealed class OrderEntityConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(x => x.CheckoutId);
         builder.Property(x => x.Total).HasPrecision(18, 2);
         builder.Property(x => x.CreatedAt);
+        builder.Property(x => x.CustomerSubject).HasMaxLength(200);
+        builder.HasIndex(x => x.CustomerSubject);
 
         builder.HasOne<Checkout>()
             .WithOne()

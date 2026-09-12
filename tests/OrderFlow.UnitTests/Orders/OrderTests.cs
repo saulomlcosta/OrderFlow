@@ -5,6 +5,8 @@ namespace OrderFlow.UnitTests.Orders;
 
 public class OrderTests
 {
+    private const string CustomerSubject = "customer-subject";
+
     [Fact]
     public void Create_CalculatesTotalCorrectly()
     {
@@ -16,6 +18,7 @@ public class OrderTests
 
         var order = Order.Create(
             Guid.NewGuid(),
+            CustomerSubject,
             items,
             new DateTimeOffset(2026, 8, 20, 0, 0, 0, TimeSpan.Zero));
 
@@ -29,7 +32,7 @@ public class OrderTests
         var productId = Guid.NewGuid();
         var item = OrderItem.Create(productId, "Monitor", capturedPrice, 1);
 
-        var order = Order.Create(Guid.NewGuid(), [item]);
+        var order = Order.Create(Guid.NewGuid(), CustomerSubject, [item]);
 
         var createdItem = Assert.Single(order.Items);
         Assert.Equal(capturedPrice, createdItem.UnitPrice);
@@ -42,9 +45,21 @@ public class OrderTests
         var checkoutId = Guid.NewGuid();
         var item = OrderItem.Create(Guid.NewGuid(), "Desk", 800m, 1);
 
-        var order = Order.Create(checkoutId, [item]);
+        var order = Order.Create(checkoutId, CustomerSubject, [item]);
 
         Assert.Equal(checkoutId, order.CheckoutId);
+        Assert.Equal(CustomerSubject, order.CustomerSubject);
+    }
+
+    [Fact]
+    public void Create_WithoutCustomerSubject_Throws()
+    {
+        var item = OrderItem.Create(Guid.NewGuid(), "Desk", 800m, 1);
+
+        var exception = Assert.Throws<DomainValidationException>(() =>
+            Order.Create(Guid.NewGuid(), " ", [item]));
+
+        Assert.Equal("Order must reference a customer subject.", exception.Message);
     }
 
     [Fact]
@@ -53,7 +68,7 @@ public class OrderTests
         var item = OrderItem.Create(Guid.NewGuid(), "Desk", 800m, 1);
 
         var exception = Assert.Throws<DomainValidationException>(() =>
-            Order.Create(Guid.Empty, [item]));
+            Order.Create(Guid.Empty, CustomerSubject, [item]));
 
         Assert.Equal("Order must reference a valid checkout.", exception.Message);
     }

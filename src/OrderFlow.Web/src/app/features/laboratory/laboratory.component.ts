@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 
 import { OrderflowApiService } from '../../core/orderflow-api.service';
+import { AuthService } from '../../core/auth.service';
 import {
   CheckoutResponse,
   OrderResponse,
@@ -21,6 +22,7 @@ import {
 })
 export class LaboratoryComponent implements OnInit {
   private readonly api = inject(OrderflowApiService);
+  protected readonly auth = inject(AuthService);
 
   protected readonly products = signal<ProductResponse[]>([]);
   protected readonly checkoutQuantity = signal(2);
@@ -53,6 +55,11 @@ export class LaboratoryComponent implements OnInit {
   }
 
   protected async startCheckout(): Promise<void> {
+    if (!this.auth.authenticated()) {
+      await this.auth.login();
+      return;
+    }
+
     await this.run('Starting checkout', async () => {
       const productId = this.requireProduct().id;
       const checkout = await firstValueFrom(

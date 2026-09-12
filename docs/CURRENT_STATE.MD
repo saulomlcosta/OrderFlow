@@ -58,6 +58,10 @@ workspaces without creating independent frontend deployments.
 - Provision products and stock through `/admin/products`
 - Browse the catalog and complete purchases through the customer-oriented `/`
 - Authenticate non-browser local automation through Client Credentials
+- Associate every new Checkout and Order with the authenticated OIDC subject
+- Hide customer resources from other authenticated customers
+- Allow administrators to audit any Checkout or Order without completing a
+  customer's purchase
 
 ## Current Domain Concepts
 
@@ -168,6 +172,24 @@ the `orderflow-automation` service account. This keeps human PKCE authentication
 separate from machine-to-machine Client Credentials while preserving complete
 test isolation.
 
+The third EF Core migration adds indexed `CustomerSubject` columns to Checkouts
+and Orders. They remain nullable at the database boundary so existing records
+survive without fabricated ownership, while domain factories require a subject
+for every new purchase. The migration was applied, rolled back, and reapplied
+against `orderflow_tests`, then applied to the Development volume without data
+loss.
+
+Starting a checkout now requires authentication and captures the JWT `sub`.
+Reading a checkout or order requires the same subject, while cross-customer
+requests return `404` to avoid disclosing resource existence. Owners alone can
+cancel or complete their purchases. Administrators can inspect any resource and
+expire overdue reservations, but cannot complete a customer's purchase.
+
+The storefront remains public for discovery and redirects to Keycloak only when
+an anonymous visitor starts checkout. Playwright now proves a two-actor journey:
+an administrator provisions inventory, signs out, and a customer signs in to
+reserve and complete the purchase.
+
 ## Recent Adjustment
 
 Kept one DbContext for transactional simplicity, but moved EF Core mapping details
@@ -195,7 +217,6 @@ Checkout reservations now have an explicit lifecycle boundary:
 
 ## Known Limitations
 
-- No customer resource ownership
 - No product update endpoint
 - No messaging
 - No caching
@@ -213,6 +234,6 @@ Checkout reservations now have an explicit lifecycle boundary:
 
 ## Next Step
 
-Define and persist customer ownership by associating Checkout and Order with the
-authenticated Keycloak `sub`. Then protect customer operations without losing
-the separate administrator-wide operational view.
+Add customer-scoped history queries and an Angular account area for the signed-in
+user's Checkouts and Orders. Keep the existing administrator-wide operational
+view separate from this self-service experience.

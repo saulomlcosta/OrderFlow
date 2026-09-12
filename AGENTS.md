@@ -46,8 +46,9 @@ decision, and evidence.
 - Keycloak is the Development identity provider. Angular uses Authorization
   Code with PKCE, and the API validates JWT bearer tokens.
 - Product creation, stock addition, checkout listing, and manual expiration
-  require the `administrator` role. Customer operations remain anonymous until
-  resource ownership is implemented.
+  require the `administrator` role. Starting, reading, cancelling, and
+  completing a checkout require authentication and enforce ownership. Order
+  reads enforce ownership, with an administrator audit override.
 - There is no payment provider, message broker, or cart yet.
 
 Do not add repositories, generic abstractions, CQRS, MediatR, new DbContexts,
@@ -70,8 +71,14 @@ they would solve.
   the Expired transition must be persisted.
 - Every new Order references its originating Checkout and preserves the product
   name and price used at completion.
+- Every new Checkout stores the authenticated OIDC `sub` as its customer
+  subject. Every resulting Order preserves the same subject.
+- Customers can operate only their own Checkouts and read only their own Orders.
+  Cross-customer access is hidden as not found.
 - Legacy Orders may have a null `CheckoutId` because the relationship was added
   through a backward-compatible migration.
+- Legacy Checkouts and Orders may have a null `CustomerSubject` and remain
+  available only through administrator read or expiration operations.
 
 Protect these invariants with tests whenever behavior changes.
 
@@ -153,7 +160,6 @@ Linux validation.
 
 Do not choose these on behalf of the project without a task-specific decision:
 
-- customer ownership and whether customer operations require authentication
 - production identity hardening and Keycloak deployment topology
 - payment workflow and failure semantics
 - automatic reservation expiration ownership

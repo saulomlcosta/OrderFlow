@@ -13,6 +13,8 @@ internal sealed class CheckoutEntityConfiguration : IEntityTypeConfiguration<Che
         builder.Property(x => x.Status)
             .HasConversion<string>()
             .HasMaxLength(32);
+        builder.Property(x => x.CustomerSubject).HasMaxLength(200);
+        builder.HasIndex(x => x.CustomerSubject);
 
         builder.OwnsMany<CheckoutItem>("_items", item =>
         {

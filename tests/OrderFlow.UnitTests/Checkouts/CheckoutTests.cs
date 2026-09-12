@@ -5,23 +5,35 @@ namespace OrderFlow.UnitTests.Checkouts;
 
 public class CheckoutTests
 {
+    private const string CustomerSubject = "customer-subject";
     private static readonly DateTimeOffset StartedAt = new(2026, 8, 26, 3, 0, 0, TimeSpan.Zero);
 
     [Fact]
     public void Start_WithItems_CreatesActiveCheckout()
     {
-        var checkout = Checkout.Start([
+        var checkout = Checkout.Start(CustomerSubject, [
             CheckoutItem.Create(Guid.NewGuid(), 2)
         ]);
 
         Assert.Equal(CheckoutStatus.Active, checkout.Status);
         Assert.Single(checkout.Items);
+        Assert.Equal(CustomerSubject, checkout.CustomerSubject);
+    }
+
+    [Fact]
+    public void Start_WithoutCustomerSubject_Throws()
+    {
+        var exception = Assert.Throws<DomainValidationException>(() => Checkout.Start(
+            " ",
+            [CheckoutItem.Create(Guid.NewGuid(), 1)]));
+
+        Assert.Equal("Checkout must reference a customer subject.", exception.Message);
     }
 
     [Fact]
     public void Complete_WhenCheckoutIsActive_ChangesStatus()
     {
-        var checkout = Checkout.Start([
+        var checkout = Checkout.Start(CustomerSubject, [
             CheckoutItem.Create(Guid.NewGuid(), 1)
         ], createdAt: StartedAt);
 
@@ -33,7 +45,7 @@ public class CheckoutTests
     [Fact]
     public void Cancel_WhenCheckoutIsActive_ChangesStatus()
     {
-        var checkout = Checkout.Start([
+        var checkout = Checkout.Start(CustomerSubject, [
             CheckoutItem.Create(Guid.NewGuid(), 1)
         ], createdAt: StartedAt);
 
@@ -61,7 +73,7 @@ public class CheckoutTests
     [Fact]
     public void Complete_WhenCheckoutIsExpired_Throws()
     {
-        var checkout = Checkout.Start([
+        var checkout = Checkout.Start(CustomerSubject, [
             CheckoutItem.Create(Guid.NewGuid(), 1)
         ], createdAt: StartedAt);
 
@@ -74,7 +86,7 @@ public class CheckoutTests
     [Fact]
     public void Cancel_WhenCheckoutIsExpired_Throws()
     {
-        var checkout = Checkout.Start([
+        var checkout = Checkout.Start(CustomerSubject, [
             CheckoutItem.Create(Guid.NewGuid(), 1)
         ], createdAt: StartedAt);
 
@@ -103,7 +115,7 @@ public class CheckoutTests
     [Fact]
     public void Expire_WhenCheckoutIsOverdue_ChangesStatus()
     {
-        var checkout = Checkout.Start([
+        var checkout = Checkout.Start(CustomerSubject, [
             CheckoutItem.Create(Guid.NewGuid(), 1)
         ], createdAt: StartedAt);
 
@@ -142,7 +154,7 @@ public class CheckoutTests
 
     private static Checkout CreateCheckoutInStatus(CheckoutStatus status)
     {
-        var checkout = Checkout.Start([
+        var checkout = Checkout.Start(CustomerSubject, [
             CheckoutItem.Create(Guid.NewGuid(), 1)
         ], createdAt: StartedAt);
 

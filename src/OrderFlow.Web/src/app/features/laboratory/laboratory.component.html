@@ -59,7 +59,9 @@
     <article class="panel">
       <div class="panel-heading"><p class="step">Step 3</p><h2>Checkout</h2></div>
       <label><span>Quantity</span><input type="number" min="1" [ngModel]="checkoutQuantity()" (ngModelChange)="checkoutQuantity.set($event)" /></label>
-      <button type="button" (click)="startCheckout()" [disabled]="!!busy() || !product() || product()?.availableStockQuantity === 0">Start checkout</button>
+      <button type="button" (click)="startCheckout()" [disabled]="!!busy() || !product() || product()?.availableStockQuantity === 0">
+        {{ auth.authenticated() ? 'Start checkout' : 'Sign in to checkout' }}
+      </button>
       @if (checkout(); as checkout) {
         <div class="checkout-card">
           <div class="checkout-topline"><strong>{{ checkout.status }}</strong><span>Expires {{ checkout.expiresAt | date:'short' }}</span></div>

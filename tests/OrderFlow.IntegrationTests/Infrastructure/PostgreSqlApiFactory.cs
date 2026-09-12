@@ -76,6 +76,9 @@ public sealed class PostgreSqlApiFactory : WebApplicationFactory<Program>, IAsyn
 
     internal HttpClient CreateAdministratorClient() => CreateClient().AsAdministrator();
 
+    internal HttpClient CreateCustomerClient(string subject = "customer-test-user") =>
+        CreateClient().AsCustomer(subject);
+
     private static string GetConnectionString() =>
         Environment.GetEnvironmentVariable("ORDERFLOW_POSTGRESQL_CONNECTION_STRING")
         ?? DefaultConnectionString;

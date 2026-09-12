@@ -1,14 +1,20 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 
 import { OrderflowApiService } from '../../core/orderflow-api.service';
+import { AuthService } from '../../core/auth.service';
 import { CheckoutResponse, OrderResponse, ProductResponse } from '../../core/orderflow.models';
 import { LaboratoryComponent } from './laboratory.component';
 
 describe('LaboratoryComponent', () => {
   let fixture: ComponentFixture<LaboratoryComponent>;
   let api: jasmine.SpyObj<OrderflowApiService>;
+  const auth = {
+    authenticated: signal(true),
+    login: jasmine.createSpy('login').and.resolveTo()
+  };
 
   const product: ProductResponse = {
     id: 'product-1',
@@ -52,10 +58,15 @@ describe('LaboratoryComponent', () => {
       'getOrder'
     ]);
     api.listProducts.and.returnValue(of([product]));
+    auth.authenticated.set(true);
+    auth.login.calls.reset();
 
     await TestBed.configureTestingModule({
       imports: [LaboratoryComponent],
-      providers: [{ provide: OrderflowApiService, useValue: api }]
+      providers: [
+        { provide: OrderflowApiService, useValue: api },
+        { provide: AuthService, useValue: auth }
+      ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(LaboratoryComponent);
@@ -81,6 +92,16 @@ describe('LaboratoryComponent', () => {
     expect(api.startCheckout).toHaveBeenCalledOnceWith(product.id, 2);
     expect(pageText()).toContain('2 unit(s) reserved');
     expect(pageText()).toContain('8 available');
+  });
+
+  it('should redirect an anonymous customer to login before checkout', async () => {
+    auth.authenticated.set(false);
+    fixture.detectChanges();
+
+    await clickButton('Sign in to checkout');
+
+    expect(auth.login).toHaveBeenCalledTimes(1);
+    expect(api.startCheckout).not.toHaveBeenCalled();
   });
 
   it('should complete checkout and render the historical order', async () => {

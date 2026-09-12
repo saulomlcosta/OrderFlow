@@ -14,7 +14,7 @@ public sealed class PostgreSqlConcurrencyTests(PostgreSqlApiFactory factory)
     public async Task StartCheckout_WithTwentyConcurrentBuyers_ReservesOnlyAvailableStock()
     {
         using var administratorClient = Factory.CreateAdministratorClient();
-        using var client = Factory.CreateClient();
+        using var client = Factory.CreateCustomerClient();
         var productId = await CreateProductWithStockAsync(administratorClient, stockQuantity: 5);
         var start = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -42,7 +42,7 @@ public sealed class PostgreSqlConcurrencyTests(PostgreSqlApiFactory factory)
     public async Task CompleteCheckout_WithTenConcurrentRequests_CreatesOneOrder()
     {
         using var administratorClient = Factory.CreateAdministratorClient();
-        using var client = Factory.CreateClient();
+        using var client = Factory.CreateCustomerClient();
         var productId = await CreateProductWithStockAsync(administratorClient, stockQuantity: 1);
         var checkoutResponse = await StartCheckoutAsync(client, productId);
         checkoutResponse.EnsureSuccessStatusCode();

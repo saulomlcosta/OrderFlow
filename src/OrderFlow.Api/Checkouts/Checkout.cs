@@ -15,6 +15,8 @@ internal sealed class Checkout
 
     internal CheckoutStatus Status { get; private set; }
 
+    internal string? CustomerSubject { get; private set; }
+
     internal IReadOnlyCollection<CheckoutItem> Items => _items.AsReadOnly();
 
     private Checkout()
@@ -22,10 +24,16 @@ internal sealed class Checkout
     }
 
     internal static Checkout Start(
+        string customerSubject,
         IEnumerable<CheckoutItem> items,
         DateTimeOffset? createdAt = null,
         TimeSpan? reservationDuration = null)
     {
+        if (string.IsNullOrWhiteSpace(customerSubject))
+        {
+            throw new DomainValidationException("Checkout must reference a customer subject.");
+        }
+
         var materializedItems = items.ToList();
 
         if (materializedItems.Count == 0)
@@ -46,7 +54,8 @@ internal sealed class Checkout
             Id = Guid.NewGuid(),
             CreatedAt = startedAt,
             ExpiresAt = startedAt.Add(duration),
-            Status = CheckoutStatus.Active
+            Status = CheckoutStatus.Active,
+            CustomerSubject = customerSubject
         };
 
         checkout._items.AddRange(materializedItems);

@@ -10,7 +10,7 @@ namespace OrderFlow.IntegrationTests.Checkouts;
 public class CheckoutEndpointsTests(OrderFlowApiFactory factory) : IntegrationTestBase(factory)
 {
     private readonly OrderFlowApiFactory _factory = factory;
-    private readonly HttpClient _client = factory.CreateClient();
+    private readonly HttpClient _client = factory.CreateCustomerClient();
     private readonly HttpClient _administratorClient = factory.CreateAdministratorClient();
 
     [Fact]
