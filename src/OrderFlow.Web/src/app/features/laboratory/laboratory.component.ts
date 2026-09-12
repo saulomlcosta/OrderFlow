@@ -87,10 +87,8 @@ export class LaboratoryComponent implements OnInit {
       const result = await firstValueFrom(this.api.completeCheckout(checkout.id));
 
       this.checkout.set({ ...checkout, status: 'Completed', isExpired: false });
-      await Promise.all([
-        this.refreshProduct(this.requireProduct().id),
-        this.loadOrderById(result.id)
-      ]);
+      await this.refreshProduct(this.requireProduct().id);
+      await this.loadOrderById(result.id);
       this.message.set('Checkout completed. The order now preserves the commercial snapshot.');
     });
   }

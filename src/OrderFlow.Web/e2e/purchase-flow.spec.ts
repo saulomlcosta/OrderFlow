@@ -22,12 +22,14 @@ test('customer completes the purchase flow and sees the order', async ({ page })
   const catalogProduct = page.getByRole('button', { name: new RegExp(productName) });
   await expect(catalogProduct).toBeVisible();
   await expect(catalogProduct).toContainText('10 available');
+  await catalogProduct.click();
 
   await page.getByRole('button', { name: 'Sign in to checkout' }).click();
   await page.locator('#username').fill('customer');
   await page.locator('#password').fill('customer');
   await page.locator('#kc-login').click();
 
+  await catalogProduct.click();
   await page.getByRole('button', { name: 'Start checkout' }).click();
   await expect(page.getByText('Checkout started. Stock is reserved for 15 minutes.')).toBeVisible();
   await expect(page.getByText('2 unit(s) reserved', { exact: true })).toBeVisible();
