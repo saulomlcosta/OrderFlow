@@ -1,0 +1,67 @@
+:host { display: block; }
+
+.account-shell {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
+}
+
+.account-hero {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 2.3rem;
+  border-radius: 28px;
+  color: #f8f1e6;
+  background:
+    radial-gradient(circle at 85% 12%, rgba(216, 160, 91, 0.27), transparent 28%),
+    linear-gradient(125deg, #182229, #29483f);
+  box-shadow: var(--shadow);
+}
+
+.account-hero h1 {
+  max-width: 11ch;
+  margin: 0;
+  font: 700 clamp(2.4rem, 6vw, 4.5rem)/0.96 var(--font-display);
+  letter-spacing: -0.055em;
+}
+
+.account-hero > div > p:last-child { max-width: 56ch; color: rgba(248, 241, 230, 0.75); line-height: 1.6; }
+.refresh-button { flex: 0 0 auto; background: #f8f1e6; color: var(--ink); }
+
+.feedback { display: flex; gap: 0.6rem; margin: 1rem 0; padding: 1rem 1.2rem; border-radius: 16px; }
+.feedback.error { color: #782d26; background: #fde6e0; }
+.feedback.success { color: #22553d; background: #e4f3e8; }
+
+.history-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
+.history-panel { min-height: 430px; padding: 1.4rem; border: 1px solid rgba(255, 255, 255, 0.55); border-radius: 24px; background: var(--panel); box-shadow: var(--shadow); }
+.orders-panel { background: linear-gradient(160deg, rgba(255,255,255,0.9), rgba(244, 235, 217, 0.88)); }
+
+.section-heading, .card-heading, .card-actions { display: flex; justify-content: space-between; gap: 1rem; }
+.section-heading { align-items: start; margin-bottom: 1rem; }
+.section-heading h2 { margin: 0; font: 700 1.65rem var(--font-display); letter-spacing: -0.035em; }
+.count, .status { display: inline-flex; width: fit-content; padding: 0.38rem 0.68rem; border-radius: 999px; font-weight: 800; background: rgba(24, 34, 41, 0.08); }
+.empty-state { color: var(--muted); line-height: 1.6; }
+
+.checkout-list, .order-list { display: grid; gap: 0.7rem; }
+.checkout-card, .order-card { padding: 1rem; border: 1px solid var(--line); border-radius: 18px; background: rgba(255,255,255,0.62); }
+.checkout-card[data-status='active'] .status { color: #17683e; background: #e2f5e8; }
+.checkout-card[data-status='expired'] .status { color: #8c3a27; background: #fde5dc; }
+.checkout-card[data-status='completed'] .status { color: #31536a; background: #e2eef4; }
+.card-heading { align-items: start; }
+.card-heading > small { max-width: 13ch; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.card-heading div { display: grid; gap: 0.35rem; }
+.card-heading strong { font: 800 1.2rem var(--font-display); }
+ul { display: grid; gap: 0.45rem; margin: 1rem 0; padding: 0; list-style: none; }
+li { display: flex; justify-content: space-between; gap: 0.75rem; color: var(--ink); }
+li span { color: var(--muted); }
+.expired-note { margin: 0 0 1rem; color: #8c3a27; line-height: 1.45; }
+.card-actions { justify-content: start; }
+.secondary { color: var(--ink); background: transparent; border: 1px solid var(--line); box-shadow: none; }
+
+@media (max-width: 780px) {
+  .history-grid { grid-template-columns: 1fr; }
+  .account-hero { display: grid; align-items: start; }
+  .refresh-button { justify-self: start; }
+}

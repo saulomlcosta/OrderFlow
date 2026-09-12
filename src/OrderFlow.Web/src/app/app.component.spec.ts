@@ -42,6 +42,18 @@ describe('AppComponent', () => {
     expect(compiled.textContent).not.toContain('Checkout operations');
   });
 
+  it('should render the account link for an authenticated customer', () => {
+    auth.authenticated.set(true);
+    auth.username.set('customer');
+
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    expect(compiled.textContent).toContain('My purchases');
+    expect(compiled.textContent).not.toContain('Checkout operations');
+  });
+
   it('should render administrative navigation for an administrator', () => {
     auth.authenticated.set(true);
     auth.username.set('administrator');
@@ -53,6 +65,7 @@ describe('AppComponent', () => {
 
     expect(compiled.textContent).toContain('Checkout operations');
     expect(compiled.textContent).toContain('Product operations');
+    expect(compiled.textContent).toContain('My purchases');
     expect(compiled.textContent).toContain('administrator');
     expect(compiled.textContent).toContain('Sign out');
   });

@@ -42,6 +42,10 @@ export class OrderflowApiService {
     });
   }
 
+  listMyCheckouts() {
+    return this.http.get<CheckoutResponse[]>('/me/checkouts');
+  }
+
   getCheckout(id: string) {
     return this.http.get<CheckoutResponse>(`/checkouts/${id}`);
   }
@@ -60,5 +64,9 @@ export class OrderflowApiService {
 
   getOrder(id: string) {
     return this.http.get<OrderResponse>(`/orders/${id}`);
+  }
+
+  listMyOrders() {
+    return this.http.get<OrderResponse[]>('/me/orders');
   }
 }

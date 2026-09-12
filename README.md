@@ -9,9 +9,10 @@ problems instead of anticipated complexity.
 
 OrderFlow is a learning-oriented order and stock-reservation system. A customer
 uses an Angular storefront to browse products, reserve quantities by starting a
-checkout, and complete that checkout as an order. Authenticated administrative
-views provision products and stock, list checkout states, and explicitly expire
-overdue reservations so their stock is released.
+checkout, and complete that checkout as an order. An authenticated account area
+recovers that customer's checkouts and orders across browser navigation.
+Administrative views provision products and stock, list checkout states, and
+explicitly expire overdue reservations so their stock is released.
 
 The current architecture is a modular monolith. One ASP.NET Core Minimal API
 contains the logical Products, Inventory, Checkouts, and Orders boundaries and
@@ -32,10 +33,10 @@ There are no external business integrations such as payment or messaging.
 | Scope | The implemented catalog provisioning, purchase, reservation, cancellation, manual expiration, order-query, and operational-health flows. |
 | Structural view | C4-inspired container level. Source-code modules, classes, and endpoints are intentionally omitted. |
 | System boundary | The Angular SPA, ASP.NET Core API, and business PostgreSQL database belong to OrderFlow. Keycloak is the trusted identity provider. |
-| Responsibilities | Angular provides a public storefront and authenticated administrative workspaces; the API validates tokens and enforces workflows, authorization, and domain rules; PostgreSQL persists business data; Keycloak authenticates users and technical clients. |
+| Responsibilities | Angular provides a public storefront, self-service customer account, and authenticated administrative workspaces; the API validates tokens and enforces workflows, authorization, and domain rules; PostgreSQL persists business data; Keycloak authenticates users and technical clients. |
 | Integrations | Angular uses OpenID Connect Authorization Code with PKCE against Keycloak and calls the API over HTTP/JSON; the API validates JWTs and accesses PostgreSQL through EF Core and Npgsql. |
 | Constraints | Keep one deployable backend and one DbContext until a demonstrated problem justifies separation. Never allow reserved stock to exceed physical stock. Complete checkout, consume reserved stock, and create the order atomically. |
-| Known gaps | Customer history UI, production identity hardening, payments, automatic reservation expiration, production deployment, observability, performance targets, and asynchronous communication remain undecided or unimplemented. |
+| Known gaps | Production identity hardening, payments, automatic reservation expiration, production deployment, observability, performance targets, and asynchronous communication remain undecided or unimplemented. |
 
 ### Structural diagram - C4-inspired container view
 

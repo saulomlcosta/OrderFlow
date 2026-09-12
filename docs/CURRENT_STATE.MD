@@ -24,8 +24,9 @@ survives API and container restarts. SQLite in-memory remains an explicit test
 provider for fast and isolated integration and browser tests.
 
 The repository now also contains an Angular 18 frontend written in TypeScript.
-One SPA exposes a customer storefront and separate authenticated administration
-workspaces without creating independent frontend deployments.
+One SPA exposes a customer storefront, an authenticated customer account area,
+and separate authenticated administration workspaces without creating
+independent frontend deployments.
 
 ## Current Capabilities
 
@@ -57,6 +58,7 @@ workspaces without creating independent frontend deployments.
 - Restrict product creation and stock addition to administrators
 - Provision products and stock through `/admin/products`
 - Browse the catalog and complete purchases through the customer-oriented `/`
+- Recover the signed-in customer's Checkouts and Orders through `/account`
 - Authenticate non-browser local automation through Client Credentials
 - Associate every new Checkout and Order with the authenticated OIDC subject
 - Hide customer resources from other authenticated customers
@@ -190,6 +192,14 @@ an anonymous visitor starts checkout. Playwright now proves a two-actor journey:
 an administrator provisions inventory, signs out, and a customer signs in to
 reserve and complete the purchase.
 
+Customer history is now an authenticated, self-service experience rather than
+browser-local state. `/me/checkouts` and `/me/orders` derive the subject solely
+from the JWT and return only that subject's resources. The Angular `/account`
+page can recover an active checkout after a refresh or navigation and lets its
+owner complete or cancel it while it remains active. An overdue checkout is
+shown as awaiting administrative stock release, because time alone still does
+not persist the Expired transition or release stock.
+
 ## Recent Adjustment
 
 Kept one DbContext for transactional simplicity, but moved EF Core mapping details
@@ -205,6 +215,7 @@ while the backend runs on `http://localhost:5216`.
 The Angular application now has three explicit user experiences:
 
 - `/` for the public storefront and purchase journey
+- `/account` for the signed-in customer's own checkout and order history
 - `/admin/products` for catalog and inventory operations
 - `/admin/checkouts` for reservation operations
 
@@ -223,7 +234,6 @@ Checkout reservations now have an explicit lifecycle boundary:
 - No metrics, tracing, or structured observability backend
 - API and frontend are not containerized
 - No distributed architecture
-- No authenticated customer history or account area
 - No broader concurrency strategy beyond protected reservation and stock confirmation flows
 - No repeated steady-state load profile or production service-level objectives
 - No automatic reservation expiration worker
@@ -234,6 +244,6 @@ Checkout reservations now have an explicit lifecycle boundary:
 
 ## Next Step
 
-Add customer-scoped history queries and an Angular account area for the signed-in
-user's Checkouts and Orders. Keep the existing administrator-wide operational
-view separate from this self-service experience.
+Investigate the next demonstrated pressure after self-service recovery. Do not
+add automatic expiration, payments, messaging, or architectural separation
+without a concrete problem and an explicit lifecycle decision.

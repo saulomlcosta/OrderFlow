@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { OrderflowApiService } from './orderflow-api.service';
-import { CheckoutResponse, ProductResponse } from './orderflow.models';
+import { CheckoutResponse, OrderResponse, ProductResponse } from './orderflow.models';
 
 describe('OrderflowApiService', () => {
   let service: OrderflowApiService;
@@ -57,6 +57,32 @@ describe('OrderflowApiService', () => {
 
     expect(request.request.method).toBe('GET');
     request.flush([expiredCheckout]);
+  });
+
+  it('should list only the authenticated customers checkouts', () => {
+    service.listMyCheckouts().subscribe(checkouts => {
+      expect(checkouts).toEqual([expiredCheckout]);
+    });
+
+    const request = http.expectOne('/me/checkouts');
+    expect(request.request.method).toBe('GET');
+    request.flush([expiredCheckout]);
+  });
+
+  it('should list only the authenticated customers orders', () => {
+    const order: OrderResponse = {
+      id: 'order-1',
+      checkoutId: expiredCheckout.id,
+      createdAt: '2026-09-04T12:20:00Z',
+      total: 1000,
+      items: [{ productId: 'product-1', productName: 'Mechanical Keyboard', unitPrice: 500, quantity: 2 }]
+    };
+
+    service.listMyOrders().subscribe(orders => expect(orders).toEqual([order]));
+
+    const request = http.expectOne('/me/orders');
+    expect(request.request.method).toBe('GET');
+    request.flush([order]);
   });
 
   it('should expire a checkout through the administrative operation', () => {

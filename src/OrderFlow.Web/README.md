@@ -8,7 +8,8 @@ This frontend was generated with Angular 18 and adapted to exercise the current 
 2. Start the frontend with `npm start` from `src/OrderFlow.Web`.
 3. Open `http://localhost:4200`.
 
-The dev server proxies `/products`, `/checkouts`, and `/orders` to `http://localhost:5216`, so the UI talks directly to the local API without extra setup.
+The dev server proxies `/products`, `/checkouts`, `/orders`, and `/me` to
+`http://localhost:5216`, so the UI talks directly to the local API without extra setup.
 
 ## Current flow
 

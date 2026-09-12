@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using OrderFlow.Api.Checkouts;
+using OrderFlow.Api.Orders;
 using OrderFlow.Api.Persistence;
 using OrderFlow.Api.Products;
 using OrderFlow.IntegrationTests.Infrastructure;
@@ -102,6 +103,34 @@ public sealed class CustomerOwnershipAuthorizationTests(OrderFlowApiFactory fact
             .SingleAsync();
 
         Assert.Equal(OwnerSubject, persistedSubject);
+    }
+
+    [Fact]
+    public async Task MyPurchaseHistory_ReturnsOnlyTheAuthenticatedCustomersResources()
+    {
+        var checkoutId = await CreateCheckoutAsync();
+        var completion = await _owner.PostAsync($"/checkouts/{checkoutId}/complete", content: null);
+        completion.EnsureSuccessStatusCode();
+        var createdOrder = await completion.Content.ReadFromJsonAsync<CreatedOrderResponse>();
+
+        using var anonymous = Factory.CreateClient();
+        var anonymousCheckouts = await anonymous.GetAsync("/me/checkouts");
+        var anonymousOrders = await anonymous.GetAsync("/me/orders");
+        var ownerCheckouts = await _owner.GetFromJsonAsync<List<CheckoutResponse>>("/me/checkouts");
+        var ownerOrders = await _owner.GetFromJsonAsync<List<OrderResponse>>("/me/orders");
+        var otherCustomerCheckouts = await _otherCustomer.GetFromJsonAsync<List<CheckoutResponse>>("/me/checkouts");
+        var otherCustomerOrders = await _otherCustomer.GetFromJsonAsync<List<OrderResponse>>("/me/orders");
+        var administratorCheckouts = await _administrator.GetFromJsonAsync<List<CheckoutResponse>>("/me/checkouts");
+        var administratorOrders = await _administrator.GetFromJsonAsync<List<OrderResponse>>("/me/orders");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, anonymousCheckouts.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, anonymousOrders.StatusCode);
+        Assert.Contains(ownerCheckouts!, checkout => checkout.Id == checkoutId);
+        Assert.Contains(ownerOrders!, order => order.Id == createdOrder!.Id);
+        Assert.DoesNotContain(otherCustomerCheckouts!, checkout => checkout.Id == checkoutId);
+        Assert.DoesNotContain(otherCustomerOrders!, order => order.Id == createdOrder!.Id);
+        Assert.DoesNotContain(administratorCheckouts!, checkout => checkout.Id == checkoutId);
+        Assert.DoesNotContain(administratorOrders!, order => order.Id == createdOrder!.Id);
     }
 
     private async Task<Guid> CreateCheckoutAsync()

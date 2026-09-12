@@ -1,0 +1,89 @@
+<main class="account-shell">
+  <section class="account-hero">
+    <div>
+      <p class="eyebrow">Customer account</p>
+      <h1>Purchases that survive a refresh.</h1>
+      <p>Your reservations and completed orders are recovered from the authenticated account, not from browser memory.</p>
+    </div>
+    <button type="button" class="refresh-button" (click)="refresh()" [disabled]="loading()">
+      {{ loading() ? 'Refreshing...' : 'Refresh history' }}
+    </button>
+  </section>
+
+  @if (error()) {
+    <section class="feedback error"><strong>Could not load your account</strong><span>{{ error() }}</span></section>
+  }
+  @if (notice()) {
+    <section class="feedback success"><strong>Account updated</strong><span>{{ notice() }}</span></section>
+  }
+
+  <section class="history-grid">
+    <section class="history-panel">
+      <div class="section-heading">
+        <div><p class="eyebrow">Reservations</p><h2>My checkouts</h2></div>
+        <span class="count">{{ checkouts().length }}</span>
+      </div>
+
+      @if (loading()) {
+        <p class="empty-state">Reading your checkout history.</p>
+      } @else if (checkouts().length === 0) {
+        <p class="empty-state">You have not started a checkout yet.</p>
+      } @else {
+        <div class="checkout-list">
+          @for (checkout of checkouts(); track checkout.id) {
+            <article class="checkout-card" [attr.data-status]="checkout.isExpired ? 'expired' : checkout.status.toLowerCase()">
+              <div class="card-heading">
+                <div><span class="status">{{ displayStatus(checkout) }}</span><small>{{ checkout.createdAt | date:'medium' }}</small></div>
+                <small>{{ checkout.id }}</small>
+              </div>
+              <ul>
+                @for (item of checkout.items; track item.productId) {
+                  <li><strong>{{ item.quantity }}x</strong> {{ productName(item.productId) }}</li>
+                }
+              </ul>
+              @if (checkout.isExpired && checkout.status === 'Active') {
+                <p class="expired-note">This reservation expired and is awaiting administrative stock release.</p>
+              }
+              @if (canComplete(checkout) || canCancel(checkout)) {
+                <div class="card-actions">
+                  <button type="button" (click)="complete(checkout)" [disabled]="processingId() === checkout.id">
+                    {{ processingId() === checkout.id ? 'Updating...' : 'Complete purchase' }}
+                  </button>
+                  <button type="button" class="secondary" (click)="cancel(checkout)" [disabled]="processingId() === checkout.id">
+                    Cancel reservation
+                  </button>
+                </div>
+              }
+            </article>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="history-panel orders-panel">
+      <div class="section-heading">
+        <div><p class="eyebrow">Commercial record</p><h2>My orders</h2></div>
+        <span class="count">{{ orders().length }}</span>
+      </div>
+
+      @if (loading()) {
+        <p class="empty-state">Reading your order history.</p>
+      } @else if (orders().length === 0) {
+        <p class="empty-state">Completed purchases will appear here.</p>
+      } @else {
+        <div class="order-list">
+          @for (order of orders(); track order.id) {
+            <article class="order-card">
+              <div class="card-heading"><div><strong>{{ order.total | currency:'USD' }}</strong><small>{{ order.createdAt | date:'medium' }}</small></div><small>{{ order.id }}</small></div>
+              <ul>
+                @for (item of order.items; track item.productId) {
+                  <li><strong>{{ item.quantity }}x</strong> {{ item.productName }} <span>{{ item.unitPrice | currency:'USD' }}</span></li>
+                }
+              </ul>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  </section>
+</main>

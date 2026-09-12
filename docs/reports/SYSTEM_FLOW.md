@@ -9,11 +9,11 @@ how the system behaves. Git history preserves each previous snapshot.
 
 | Field | Value |
 | --- | --- |
-| Recorded at | 2026-09-11 |
+| Recorded at | 2026-09-12 |
 | Project stage | V1 - Initial implementation |
 | Baseline commit | `6d2bc88` |
 | Persistence | EF Core with PostgreSQL 18 for Development and SQLite in-memory for tests |
-| User interfaces | Angular storefront, product administration, and checkout administration |
+| User interfaces | Angular storefront, customer account, product administration, and checkout administration |
 | Identity | Keycloak 26.7.3 with a versioned Development realm and PostgreSQL store |
 | Automation | GitHub Actions quality gates and a manual isolated k6 load baseline |
 
@@ -38,6 +38,11 @@ flowchart TD
     Reserve --> Active["Checkout Active<br/>CustomerSubject = JWT sub<br/>15-minute reservation"]
 
     Active --> Action{"Owner's next action"}
+
+    User --> Account["My purchases<br/>GET /me/checkouts<br/>GET /me/orders"]
+    Account --> OwnedHistory{"JWT sub matches<br/>CustomerSubject?"}
+    OwnedHistory -->|"Yes"| Active
+    OwnedHistory -->|"Yes"| Order
 
     Action -->|Complete before expiration| ConfirmStock["Transaction<br/>Quantity -= quantity<br/>Reserved -= quantity"]
     ConfirmStock --> Completed["Checkout Completed"]
@@ -126,13 +131,17 @@ flowchart LR
 - Customers can read, cancel, and complete only their own resources. A different
   customer receives `404`; administrators may read any resource but cannot
   complete another customer's purchase.
+- Customer history is queried through `/me/checkouts` and `/me/orders`. The API
+  derives the subject from the token and never accepts a customer identifier from
+  the browser for these queries.
 - Legacy ownerless purchases remain visible to administrators but cannot be
   claimed or completed by a customer.
 
 ## Architectural Boundaries
 
-- Angular provides a public customer storefront and authenticated product and
-  checkout administration inside one SPA.
+- Angular provides a public customer storefront, an authenticated self-service
+  account area, and authenticated product and checkout administration inside one
+  SPA.
 - Keycloak authenticates Development users and issues JWT access tokens through
   Authorization Code with PKCE; its data is isolated in a dedicated PostgreSQL
   database.
@@ -166,7 +175,6 @@ flowchart LR
 
 ## Known Missing Flows
 
-- Customer-scoped history queries and account UI
 - Automatic reservation expiration
 - Payment processing
 - Product maintenance beyond creation
@@ -187,3 +195,4 @@ flowchart LR
 | 2026-09-10 | Authentication boundary | Added Keycloak OIDC and protected checkout administration by role. |
 | 2026-09-10 | Storefront boundary | Added a public catalog, protected product operations, and separated customer and administrator UI flows. |
 | 2026-09-11 | Customer ownership | Persisted OIDC subjects on purchases and enforced owner-scoped customer operations. |
+| 2026-09-12 | Customer account | Added token-derived self-service history and recovery of active purchases. |

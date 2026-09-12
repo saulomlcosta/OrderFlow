@@ -20,6 +20,7 @@
       </a>
     }
     @if (auth.authenticated()) {
+      <a routerLink="/account" routerLinkActive="active">My purchases</a>
       <span class="identity">{{ auth.username() }}</span>
       <button type="button" (click)="auth.logout()">Sign out</button>
     } @else {
