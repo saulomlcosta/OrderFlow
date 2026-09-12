@@ -133,8 +133,19 @@ jobs:
         working-directory: .
         run: |
           docker compose up -d keycloak
-          curl --fail --retry 60 --retry-connrefused --retry-delay 2 \
-            http://localhost:8080/realms/orderflow/.well-known/openid-configuration > /dev/null
+
+          for attempt in {1..60}; do
+            if curl --fail --silent \
+              http://localhost:8080/realms/orderflow/.well-known/openid-configuration > /dev/null; then
+              exit 0
+            fi
+
+            sleep 2
+          done
+
+          docker compose ps
+          docker compose logs keycloak
+          exit 1
 
       - name: Test purchase journey
         run: npm run test:e2e

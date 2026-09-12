@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 
 test('customer completes the purchase flow and sees the order', async ({ page }) => {
+  const productName = `E2E Keyboard ${Date.now()}`;
+
   await page.goto('/admin/products');
 
   await page.locator('#username').fill('administrator');
@@ -8,6 +10,7 @@ test('customer completes the purchase flow and sees the order', async ({ page })
   await page.locator('#kc-login').click();
 
   await expect(page.getByRole('heading', { name: 'Catalog operations' })).toBeVisible();
+  await page.getByLabel('Name').fill(productName);
   await page.getByRole('button', { name: 'Create product' }).click();
   await expect(page.getByText('Product created. Add physical stock before customers can reserve it.')).toBeVisible();
   await page.getByRole('button', { name: 'Add stock' }).click();
@@ -16,7 +19,7 @@ test('customer completes the purchase flow and sees the order', async ({ page })
   await page.getByRole('button', { name: 'Sign out' }).click();
 
   await expect(page.getByRole('heading', { name: 'Choose. Reserve. Complete.' })).toBeVisible();
-  const catalogProduct = page.getByRole('button', { name: /Mechanical Keyboard/ });
+  const catalogProduct = page.getByRole('button', { name: new RegExp(productName) });
   await expect(catalogProduct).toBeVisible();
   await expect(catalogProduct).toContainText('10 available');
 
